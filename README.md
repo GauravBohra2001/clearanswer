@@ -1,7 +1,7 @@
 # ClearAnswer - Research Claim Auditor
 
 **Track:** Evidence Navigator (Track 2)
-**Team:** clearanswer (Gaurav Bohra)
+**Team:** clearanswer (Gaurav Bohra, Ishika Gupta, Kush Patel)
 **Hackathon:** OncoSys Cancer AI Lab, Northeastern University, Nov 2026
 
 ## What it does
