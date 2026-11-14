@@ -317,7 +317,7 @@ class VerifierAgent(BaseAgent):
             Evidence(
                 kind="analysis",
                 id="semantic_pre_check",
-                note=f"Topic '{topic}' is in cannot_answer. Reason: {reason[:200]}",
+                note=f"Topic '{topic}' is in cannot_answer. Reason: {reason}",
             ),
             Evidence(
                 kind="file",

@@ -177,7 +177,7 @@ def _build_evidence(
     evidence: list[dict] = [{
         "kind": "claim",
         "id": finding_id,
-        "note": _short(result.claim_text, 200),
+        "note": result.claim_text,
     }]
 
     seen: set[tuple] = {("claim", finding_id)}
@@ -207,7 +207,7 @@ def _build_evidence(
         evidence.append({
             "kind": "analysis",
             "id": "data_scope_check",
-            "note": _short(limitation, 200),
+            "note": limitation,
         })
     return evidence
 
