@@ -74,9 +74,12 @@
       text-transform: uppercase;
       color: var(--ink);
       display: inline-block;
-      /* Shift the brand mark visibly left for optical balance against the
-         right-weighted illustration below. Tune the translateX value if you
-         want more or less shift. */
+      /* letter-spacing adds a trailing tracking unit after the last glyph
+         that would nudge visible glyphs off-center. Negative margin-right
+         matching -letter-spacing cancels it. */
+      margin-right: -1px;
+      /* Then shift the whole block left for optical balance against the
+         right-weighted illustration below (tuned by hand with the user). */
       transform: translateX(-12px);
     }
 
@@ -1632,9 +1635,11 @@
         panel.appendChild(sec);
       }
 
-      // 3. Limitation / summary caveat.
-      const caveat = claim.limitation || claim.summary;
-      if (caveat) {
+      // 3. Caveat / "What was missing" section. Only shown when there is
+      // actual limitation text. For supported claims with no limitation we
+      // omit the section entirely rather than fall back to the summary,
+      // which would just repeat the sentence under its own badge.
+      if (claim.limitation) {
         const sec = document.createElement('div');
         sec.className = 'drill-section';
         const lab = document.createElement('div');
@@ -1643,7 +1648,7 @@
         sec.appendChild(lab);
         const body = document.createElement('div');
         body.className = 'evidence-detail';
-        body.textContent = caveat;
+        body.textContent = claim.limitation;
         sec.appendChild(body);
         panel.appendChild(sec);
       }
@@ -1748,7 +1753,7 @@
         });
         if (!res.ok) throw new Error('export failed (' + res.status + ')');
         const data = await res.json();
-        const flag = data.valid ? '✓ valid' : '✗ INVALID';
+        const flag = data.valid ? 'PASS' : 'FAIL';
         statusEl.textContent = flag + ' · ' + (data.validator_output || '').split('\n')[0]
           + ' · wrote ' + (data.path || 'outputs/audit.json');
 

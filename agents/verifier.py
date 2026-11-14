@@ -13,6 +13,7 @@ is otherwise chatty.
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from agents.base import BaseAgent
@@ -232,12 +233,27 @@ class VerifierAgent(BaseAgent):
 
         if final_input is None:
             # The model exhausted its budget without finalizing. Return a
-            # defensive insufficient_evidence verdict rather than crashing.
+            # defensive insufficient_evidence verdict rather than crashing,
+            # but keep pointers to whatever files the verifier DID check
+            # before it ran out of steps. A reviewer needs to see what we
+            # looked at, not just a bare "budget_exhausted" marker.
+            partial_evidence = self._build_evidence(tool_history, declared_files=[])
+            partial_evidence.append(
+                Evidence(
+                    kind="analysis",
+                    id="budget_exhausted",
+                    note=(
+                        f"Verifier gave up after {_MAX_STEPS} tool calls without "
+                        f"emitting finalize_verdict. Evidence above lists the "
+                        f"files and queries it did run."
+                    ),
+                )
+            )
             fallback = insufficient(
                 claim_text=claim_text,
                 reason="Verifier exhausted its reasoning budget without reaching a verdict.",
                 confidence="low",
-                evidence=[Evidence(kind="analysis", id="budget_exhausted")],
+                evidence=partial_evidence,
             )
             fallback.reasoning = "Verifier did not emit finalize_verdict within the step budget."
             return fallback
@@ -417,9 +433,21 @@ def _block_to_dict(block) -> dict:
     return {"type": btype or "unknown"}
 
 
+_EMOJI_RE = re.compile(
+    "[☀-➿\U0001F300-\U0001FAFF✅❌✔✖⚠✨✎]"
+)
+
+
 def _collect_text(blocks) -> str:
+    """Join model text blocks, stripping any emoji so traces stay plain ASCII.
+
+    The model sometimes decorates reasoning with checkmarks or warning signs
+    which clutter the audit trace. Reviewers read the trace as prose, so we
+    scrub emoji at collection time rather than filtering at render time.
+    """
     chunks = [b.text for b in blocks if getattr(b, "type", None) == "text"]
-    return " ".join(c.strip() for c in chunks if c and c.strip())
+    joined = " ".join(c.strip() for c in chunks if c and c.strip())
+    return _EMOJI_RE.sub("", joined).strip()
 
 
 def _trim_for_trace(result: Any, limit: int = 40) -> Any:
