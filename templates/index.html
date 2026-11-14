@@ -1672,7 +1672,9 @@
 
       li.addEventListener('click', toggle);
       li.addEventListener('keydown', e => {
-        if (e.target.closest('.review-actions')) return;
+        // Typing in the override form (reason box, buttons) must keep its keys.
+        if (e.target.closest('.review-actions') || e.target.closest('.override-form')
+            || e.target.matches('input, textarea')) return;
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(e); }
       });
 
