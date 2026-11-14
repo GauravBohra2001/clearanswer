@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Research Claim Auditor — ClearAnswer</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg: #FCFBF8;
+      --surface: #FFFFFF;
+      --border: #ECE6DA;
+      --tile: #F3EFE6;
+      --ink: #1E2A3A;
+      --slate: #5B6573;
+      --mute: #8A919B;
+      --primary: #2F6F73;
+      --on-primary: #FFFFFF;
+
+      --supported-bg: #E3EFEC;
+      --supported-fg: #22545A;
+      --contradicted-bg: #F8E4DE;
+      --contradicted-fg: #9C3F2F;
+      --insufficient-bg: #F6EEDC;
+      --insufficient-fg: #8A6620;
+      --pending-bg: #ECEEF8;
+      --pending-fg: #4A5891;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3 {
+      font-family: 'Bricolage Grotesque', serif;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    /* ── Top accent bar ── */
+    .top-bar {
+      height: 4px;
+      background: var(--primary);
+      width: 100%;
+    }
+
+    /* ── Page wrapper ── */
+    .page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 32px 20px 64px;
+    }
+
+    /* ── Brand mark ── */
+    .brand-mark {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--mute);
+      text-align: center;
+      display: block;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* ── Illustration area ── */
+    .illus-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 8px 0 16px;
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .page-header h1 {
+      font-size: 28px;
+      color: var(--ink);
+      margin-bottom: 10px;
+    }
+
+    .page-header .subtitle {
+      font-size: 15px;
+      color: var(--slate);
+      line-height: 1.55;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .deco-line {
+      width: 40px;
+      height: 2px;
+      background: var(--primary);
+      border-radius: 1px;
+      margin: 20px auto 0;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+    }
+
+    /* ── Drop zone ── */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 200ms ease, background 200ms ease;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.drag-over {
+      border-color: var(--primary);
+      background: var(--supported-bg);
+    }
+
+    .drop-zone-primary {
+      font-size: 14px;
+      color: var(--slate);
+    }
+
+    .drop-zone-secondary {
+      font-size: 12px;
+      color: var(--mute);
+      margin-top: 4px;
+    }
+
+    .drop-zone-filename {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-top: 6px;
+    }
+
+    #file-input { display: none; }
+
+    /* ── Textarea ── */
+    .input-gap { height: 12px; }
+
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--bg);
+      resize: vertical;
+      outline: none;
+      min-height: 110px;
+      transition: border-color 150ms;
+    }
+
+    textarea:focus {
+      border-color: var(--primary);
+    }
+
+    textarea::placeholder {
+      color: var(--mute);
+    }
+
+    /* ── Button ── */
+    .btn-row {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      margin-top: 16px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--on-primary);
+      border: none;
+      border-radius: 999px;
+      height: 44px;
+      padding: 0 28px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.1px;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-text {
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    /* ── Info strip ── */
+    .info-strip {
+      background: var(--tile);
+      border-radius: 12px;
+      padding: 10px 16px;
+      text-align: center;
+      margin-top: 20px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .info-strip strong {
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .info-strip span {
+      color: var(--slate);
+      font-weight: 400;
+    }
+
+    /* ── Process timeline ── */
+    .timeline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 20px;
+    }
+
+    .timeline-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      min-width: 72px;
+    }
+
+    .timeline-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--mute);
+      white-space: nowrap;
+    }
+
+    .timeline-label.active {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .timeline-label.done {
+      color: var(--supported-fg);
+    }
+
+    .timeline-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .timeline-dot.active { background: var(--primary); }
+    .timeline-dot.done   { background: var(--supported-fg); }
+
+    .timeline-line {
+      flex: 1;
+      max-width: 60px;
+      height: 2px;
+      background: var(--border);
+      margin-bottom: 20px; /* aligns with dot row */
+    }
+
+    .timeline-line.done { background: var(--primary); }
+
+    /* ── Card header row ── */
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0;
+    }
+
+    .card-header h2 {
+      font-size: 16px;
+      color: var(--ink);
+    }
+
+    .card-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 12px 0;
+    }
+
+    /* ── Claim rows ── */
+    .claim-list {
+      list-style: none;
+    }
+
+    .claim-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .claim-row:last-of-type {
+      border-bottom: none;
+    }
+
+    .claim-row.clickable {
+      cursor: pointer;
+      border-radius: 8px;
+      padding: 14px 8px;
+      margin: 0 -8px;
+      transition: background-color 150ms ease;
+    }
+
+    .claim-row.clickable:hover {
+      background: var(--tile);
+    }
+
+    .claim-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--tile);
+      color: var(--slate);
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .claim-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .claim-text {
+      font-size: 14px;
+      color: var(--ink);
+      line-height: 1.4;
+    }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .badge-pending        { background: var(--pending-bg);        color: var(--pending-fg); }
+    .badge-supported      { background: var(--supported-bg);      color: var(--supported-fg); }
+    .badge-contradicted   { background: var(--contradicted-bg);   color: var(--contradicted-fg); }
+    .badge-insufficient_evidence { background: var(--insufficient-bg); color: var(--insufficient-fg); }
+
+    @keyframes badge-resolve {
+      from { transform: scale(0.95); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+
+    .badge-resolving {
+      animation: badge-resolve 200ms ease-out forwards;
+    }
+
+    /* ── Evidence panel ── */
+    .evidence-wrap {
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transition: max-height 300ms ease-out, opacity 200ms ease-out;
+      margin-left: 34px;
+    }
+
+    .evidence-wrap.open {
+      max-height: 500px;
+      opacity: 1;
+    }
+
+    .evidence-panel {
+      background: var(--tile);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin: 6px 0 10px;
+      font-size: 13.5px;
+      color: var(--slate);
+      line-height: 1.6;
+    }
+
+    .evidence-contradiction {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .evidence-block {
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .evidence-block-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--mute);
+      margin-bottom: 3px;
+    }
+
+    .evidence-block-value {
+      font-size: 14px;
+    }
+
+    .evidence-block-value.report-val {
+      color: var(--contradicted-fg);
+    }
+
+    .evidence-block-value.data-val {
+      font-weight: 700;
+      color: var(--supported-fg);
+    }
+
+    .evidence-arrow {
+      color: var(--mute);
+      font-size: 16px;
+      padding-top: 18px;
+      flex-shrink: 0;
+    }
+
+    .evidence-detail {
+      font-size: 13.5px;
+      color: var(--slate);
+    }
+
+    /* ── Status line ── */
+    .status-line {
+      font-size: 12px;
+      color: var(--mute);
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    /* ── Summary stats ── */
+    .summary-stats {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-block {
+      flex: 1;
+      border-radius: 12px;
+      padding: 12px 16px;
+      text-align: center;
+    }
+
+    .stat-block.supported    { background: var(--supported-bg); }
+    .stat-block.contradicted { background: var(--contradicted-bg); }
+    .stat-block.insufficient { background: var(--insufficient-bg); }
+
+    .stat-count {
+      font-family: 'Bricolage Grotesque', serif;
+      font-size: 22px;
+      font-weight: 700;
+      display: block;
+      line-height: 1.1;
+    }
+
+    .stat-block.supported    .stat-count { color: var(--supported-fg); }
+    .stat-block.contradicted .stat-count { color: var(--contradicted-fg); }
+    .stat-block.insufficient .stat-count { color: var(--insufficient-fg); }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-top: 4px;
+    }
+
+    .stat-block.supported    .stat-label { color: var(--supported-fg); }
+    .stat-block.contradicted .stat-label { color: var(--contradicted-fg); }
+    .stat-block.insufficient .stat-label { color: var(--insufficient-fg); }
+
+    /* ── Done actions ── */
+    .done-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 16px;
+    }
+
+    /* ── Footer ── */
+    .page-footer {
+      font-size: 11px;
+      color: var(--mute);
+      text-align: center;
+      margin-top: 32px;
+    }
+
+    /* ── State visibility ── */
+    .state { display: none; }
+    .state.active { display: block; }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar"></div>
+
+  <div class="page">
+
+    <!-- ── STATE 1: Ready ───────────────────────────────────────────────── -->
+    <div id="state-ready" class="state active">
+
+      <div class="page-header">
+        <span class="brand-mark">clearanswer</span>
+        <div class="illus-wrap">
+          <!-- Illustration 1: Upload / search document -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="120" height="100" viewBox="0 0 120 100" fill="none">
+            <!-- Ground shadow -->
+            <ellipse cx="52" cy="93" rx="32" ry="4" fill="#1E2A3A" opacity="0.10"/>
+            <!-- Document body -->
+            <rect x="18" y="8" width="54" height="70" rx="4" fill="#FFFFFF" stroke="#3A4A5E" stroke-width="2.0" stroke-linejoin="round" stroke-linecap="round"/>
+            <!-- Fold corner background -->
+            <path d="M57 8 L72 23 L57 23 Z" fill="#F3EFE6" stroke="#9C8261" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+            <!-- Fold corner top-right -->
+            <path d="M57 8 L72 8 L72 23" fill="#F1DEC0" stroke="#9C8261" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+            <!-- Text lines on document -->
+            <path d="M28 36 L58 36" stroke="#C3C8CF" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M28 44 L62 44" stroke="#C3C8CF" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M28 52 L54 52" stroke="#C3C8CF" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M28 60 L60 60" stroke="#C3C8CF" stroke-width="1.5" stroke-linecap="round"/>
+            <!-- Document shine -->
+            <path d="M22 14 L22 22" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" opacity="0.5"/>
+            <!-- Magnifying glass shadow -->
+            <ellipse cx="82" cy="92" rx="14" ry="3" fill="#1E2A3A" opacity="0.10"/>
+            <!-- Magnifying glass circle -->
+            <circle cx="78" cy="68" r="14" fill="#3F8C8F" stroke="#1F4E52" stroke-width="2.0"/>
+            <!-- Magnifying glass inner shine -->
+            <circle cx="73" cy="63" r="3.5" fill="#FFFFFF" opacity="0.18"/>
+            <!-- Magnifying glass lens shine -->
+            <path d="M72 61 Q75 59 78 61" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" opacity="0.5"/>
+            <!-- Magnifying glass handle -->
+            <path d="M88 78 L98 90" stroke="#9C8261" stroke-width="4.0" stroke-linecap="round"/>
+            <path d="M88 78 L98 90" stroke="#F1DEC0" stroke-width="2.4" stroke-linecap="round"/>
+            <!-- Golden sparkles -->
+            <path d="M96 56 L99 52" stroke="#E9C46A" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M102 63 L107 62" stroke="#E9C46A" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M99 72 L103 75" stroke="#E9C46A" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h1>Research Claim Auditor</h1>
+        <p class="subtitle">Upload a research report and we'll verify every factual claim against the TCGA-BRCA dataset.</p>
+        <div class="deco-line"></div>
+      </div>
+
+      <div class="card">
+        <div
+          class="drop-zone"
+          id="drop-zone"
+          role="button"
+          tabindex="0"
+          aria-label="Drop file or click to browse"
+        >
+          <div class="drop-zone-primary" id="drop-label-primary">Drop a .txt or .md file here</div>
+          <div class="drop-zone-secondary" id="drop-label-secondary">or click to browse</div>
+          <div class="drop-zone-filename" id="drop-label-filename" style="display:none;"></div>
+          <input type="file" id="file-input" accept=".txt,.md" />
+        </div>
+
+        <div class="input-gap"></div>
+
+        <textarea
+          id="report-textarea"
+          rows="5"
+          placeholder="Or paste report text here…"
+        ></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" id="audit-btn" disabled>Audit Report</button>
+      </div>
+
+      <div class="info-strip">
+        <strong>TCGA-BRCA Dataset</strong>
+        <span> · 1,101 tumors · 5 data layers · Deterministic verification</span>
+      </div>
+    </div><!-- /state-ready -->
+
+
+    <!-- ── STATE 2: Working ──────────────────────────────────────────────── -->
+    <div id="state-working" class="state">
+
+      <div class="page-header">
+        <span class="brand-mark">clearanswer</span>
+        <div class="illus-wrap">
+          <!-- Illustration 2: Clipboard with sequential check marks -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="120" height="100" viewBox="0 0 120 100" fill="none">
+            <!-- Ground shadow -->
+            <ellipse cx="60" cy="93" rx="30" ry="4" fill="#1E2A3A" opacity="0.10"/>
+            <!-- Clipboard backing -->
+            <rect x="22" y="14" width="56" height="72" rx="4" fill="#FFFFFF" stroke="#3A4A5E" stroke-width="2.0" stroke-linejoin="round"/>
+            <!-- Clipboard clip -->
+            <rect x="42" y="10" width="16" height="10" rx="3" fill="#F1DEC0" stroke="#9C8261" stroke-width="1.4" stroke-linejoin="round"/>
+            <!-- Clip hole -->
+            <circle cx="50" cy="15" r="2.5" fill="#FFFFFF" stroke="#9C8261" stroke-width="1.2"/>
+            <!-- Gold corner fold -->
+            <path d="M60 14 L78 14 L78 32" fill="#F1DEC0" stroke="#9C8261" stroke-width="1.4" stroke-linejoin="round"/>
+            <path d="M60 14 L78 32 L60 32 Z" fill="#FFFFFF" stroke="#9C8261" stroke-width="1.0" stroke-linejoin="round"/>
+            <!-- Row 1 — checked (teal checkmark) -->
+            <path d="M31 44 L58 44" stroke="#C3C8CF" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M63 40 L66 43 L71 37" stroke="#3F8C8F" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Row 2 — in progress (gold dot) -->
+            <path d="M31 55 L58 55" stroke="#C3C8CF" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="67" cy="55" r="3.5" fill="#E9C46A" stroke="#A57C2A" stroke-width="1.4"/>
+            <!-- Row 3 — pending (empty) -->
+            <path d="M31 66 L58 66" stroke="#C3C8CF" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="67" cy="66" r="3.5" fill="#FFFFFF" stroke="#C3C8CF" stroke-width="1.4"/>
+            <!-- Clipboard shine -->
+            <path d="M26 20 L26 30" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" opacity="0.5"/>
+          </svg>
+        </div>
+        <h1>Auditing Report</h1>
+        <p class="subtitle">Extracting and verifying claims against the dataset.</p>
+        <div class="deco-line"></div>
+      </div>
+
+      <!-- Process timeline -->
+      <div class="timeline" id="timeline">
+        <div class="timeline-step">
+          <div class="timeline-dot" id="tl-dot-0"></div>
+          <div class="timeline-label" id="tl-label-0">Extract</div>
+        </div>
+        <div class="timeline-line" id="tl-line-0"></div>
+        <div class="timeline-step">
+          <div class="timeline-dot" id="tl-dot-1"></div>
+          <div class="timeline-label" id="tl-label-1">Verify</div>
+        </div>
+        <div class="timeline-line" id="tl-line-1"></div>
+        <div class="timeline-step">
+          <div class="timeline-dot" id="tl-dot-2"></div>
+          <div class="timeline-label" id="tl-label-2">Report</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Extracted Claims</h2>
+          <span class="badge badge-pending" id="working-claims-badge">4 claims</span>
+        </div>
+        <div class="card-divider"></div>
+        <ul class="claim-list" id="working-claim-list"></ul>
+      </div>
+
+      <p class="status-line" id="working-status">Extracting claims…</p>
+
+    </div><!-- /state-working -->
+
+
+    <!-- ── STATE 3: Done ─────────────────────────────────────────────────── -->
+    <div id="state-done" class="state">
+
+      <div class="page-header">
+        <span class="brand-mark">clearanswer</span>
+        <div class="illus-wrap">
+          <!-- Illustration 3: Document with verified shield -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="160" height="130" viewBox="0 0 160 130" fill="none">
+            <!-- Ground shadow under document -->
+            <ellipse cx="58" cy="122" rx="36" ry="4.5" fill="#1E2A3A" opacity="0.09"/>
+            <!-- Document body -->
+            <rect x="14" y="8" width="62" height="82" rx="5" fill="#FFFFFF" stroke="#3A4A5E" stroke-width="2.0" stroke-linejoin="round"/>
+            <!-- Gold fold — top-right triangle flap -->
+            <path d="M58 8 L76 8 L76 26 Z" fill="#F1DEC0" stroke="#9C8261" stroke-width="1.4" stroke-linejoin="round"/>
+            <path d="M58 8 L76 26 L58 26 Z" fill="#F3EFE6" stroke="#9C8261" stroke-width="1.0" stroke-linejoin="round"/>
+            <!-- Text lines on document -->
+            <path d="M24 40 L62 40" stroke="#C3C8CF" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M24 50 L66 50" stroke="#C3C8CF" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M24 60 L58 60" stroke="#C3C8CF" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M24 70 L64 70" stroke="#C3C8CF" stroke-width="1.5" stroke-linecap="round"/>
+            <!-- Document shine -->
+            <path d="M18 16 L18 28" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+
+            <!-- ── Shield ── -->
+            <!-- Shield outer shadow -->
+            <ellipse cx="104" cy="124" rx="22" ry="4" fill="#1E2A3A" opacity="0.12"/>
+            <!-- Shield outer body — proper kite/heraldic shape -->
+            <path d="M104 52 L130 61 L130 83 C130 102 104 114 104 114 C104 114 78 102 78 83 L78 61 Z"
+                  fill="#3F8C8F" stroke="#1F4E52" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+            <!-- Shield inner ring — slightly inset, darker teal -->
+            <path d="M104 59 L124 66.5 L124 83 C124 98 104 108 104 108 C104 108 84 98 84 83 L84 66.5 Z"
+                  fill="none" stroke="#1F4E52" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round" opacity="0.35"/>
+            <!-- Shield top highlight band -->
+            <path d="M104 52 L130 61 L124 66.5 L104 59 L84 66.5 L78 61 Z"
+                  fill="#FFFFFF" opacity="0.10"/>
+            <!-- Shield left-edge shine -->
+            <path d="M82 65 Q80 75 81 85" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/>
+            <!-- Checkmark — bold, well-centered in the shield -->
+            <path d="M93 83 L100 91 L117 70"
+                  stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Checkmark subtle inner depth -->
+            <path d="M93 83 L100 91 L117 70"
+                  stroke="#1F4E52" stroke-width="1.0" stroke-linecap="round" stroke-linejoin="round" opacity="0.18"/>
+
+            <!-- ── Sparkles around shield ── -->
+            <!-- top-right long -->
+            <path d="M133 54 L138 48" stroke="#E9C46A" stroke-width="2.0" stroke-linecap="round"/>
+            <!-- right mid -->
+            <path d="M138 72 L144 71" stroke="#E9C46A" stroke-width="2.0" stroke-linecap="round"/>
+            <!-- bottom-right -->
+            <path d="M133 98 L138 103" stroke="#E9C46A" stroke-width="2.0" stroke-linecap="round"/>
+            <!-- top-left -->
+            <path d="M75 54 L70 49" stroke="#E9C46A" stroke-width="1.6" stroke-linecap="round"/>
+            <!-- left mid -->
+            <path d="M72 76 L67 76" stroke="#E9C46A" stroke-width="1.6" stroke-linecap="round"/>
+            <!-- small dot sparkle top -->
+            <circle cx="104" cy="46" r="2" fill="#E9C46A"/>
+          </svg>
+        </div>
+        <h1>Audit Complete</h1>
+        <p class="subtitle">All claims verified. Click any claim to see the evidence.</p>
+        <div class="deco-line"></div>
+      </div>
+
+      <!-- Summary stats -->
+      <div class="summary-stats">
+        <div class="stat-block supported">
+          <span class="stat-count" id="stat-supported">0</span>
+          <span class="stat-label">Supported</span>
+        </div>
+        <div class="stat-block contradicted">
+          <span class="stat-count" id="stat-contradicted">0</span>
+          <span class="stat-label">Contradicted</span>
+        </div>
+        <div class="stat-block insufficient">
+          <span class="stat-count" id="stat-insufficient">0</span>
+          <span class="stat-label">Insufficient</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Claim Details</h2>
+        </div>
+        <div class="card-divider"></div>
+        <ul class="claim-list" id="done-claim-list"></ul>
+      </div>
+
+      <div class="done-actions">
+        <button class="btn-primary" id="export-btn">Export audit.json</button>
+        <button class="btn-text"    id="new-audit-btn">New Audit</button>
+      </div>
+
+      <p class="page-footer">Powered by clearanswer · TCGA-BRCA dataset</p>
+
+    </div><!-- /state-done -->
+
+  </div><!-- /page -->
+
+  <script>
+    // ── State ────────────────────────────────────────────────────────────────
+    let currentJobId   = null;
+    let pollTimer      = null;
+    let lastVerdicts   = {};   // id → verdict string
+    let fullResult     = null;
+
+    // ── Utils ────────────────────────────────────────────────────────────────
+    function showState(name) {
+      document.querySelectorAll('.state').forEach(el => el.classList.remove('active'));
+      document.getElementById('state-' + name).classList.add('active');
+    }
+
+    function esc(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function verdictLabel(verdict) {
+      switch (verdict) {
+        case 'supported':             return 'Supported';
+        case 'contradicted':          return 'Contradicted';
+        case 'insufficient_evidence': return 'Insufficient evidence';
+        default:                      return 'Checking\u2026';
+      }
+    }
+
+    function verdictClass(verdict) {
+      return 'badge-' + (verdict || 'pending');
+    }
+
+    function makeBadge(verdict, animate) {
+      const b = document.createElement('span');
+      b.className = 'badge ' + verdictClass(verdict);
+      b.textContent = verdictLabel(verdict);
+      if (animate) b.classList.add('badge-resolving');
+      return b;
+    }
+
+    // ── Drop zone ────────────────────────────────────────────────────────────
+    const dropZone   = document.getElementById('drop-zone');
+    const fileInput  = document.getElementById('file-input');
+    const textarea   = document.getElementById('report-textarea');
+    const auditBtn   = document.getElementById('audit-btn');
+    const dropLabelP = document.getElementById('drop-label-primary');
+    const dropLabelS = document.getElementById('drop-label-secondary');
+    const dropLabelF = document.getElementById('drop-label-filename');
+
+    let droppedFileText = '';
+
+    function checkReady() {
+      auditBtn.disabled = !(textarea.value.trim().length > 0 || droppedFileText.length > 0);
+    }
+
+    textarea.addEventListener('input', checkReady);
+
+    dropZone.addEventListener('click',  () => fileInput.click());
+    dropZone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
+
+    dropZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
+
+    function loadFile(file) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        droppedFileText = ev.target.result;
+        dropLabelP.textContent   = 'File loaded';
+        dropLabelS.style.display = 'none';
+        dropLabelF.textContent   = file.name;
+        dropLabelF.style.display = 'block';
+        checkReady();
+      };
+      reader.readAsText(file);
+    }
+
+    // ── Submit ───────────────────────────────────────────────────────────────
+    auditBtn.addEventListener('click', async () => {
+      const text = droppedFileText || textarea.value.trim();
+      if (!text) return;
+      auditBtn.disabled = true;
+      try {
+        const res  = await fetch('/api/audit', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ report_text: text }),
+        });
+        const data = await res.json();
+        currentJobId = data.job_id;
+        startWorking();
+      } catch (err) {
+        auditBtn.disabled = false;
+        alert('Could not start audit: ' + err.message);
+      }
+    });
+
+    // ── Working state ────────────────────────────────────────────────────────
+    function startWorking() {
+      lastVerdicts = {};
+      fullResult   = null;
+      document.getElementById('working-claim-list').innerHTML = '';
+      document.getElementById('working-status').textContent = 'Extracting claims\u2026';
+      setTimeline('extracting');
+      showState('working');
+      pollTimer = setInterval(poll, 1500);
+    }
+
+    function setTimeline(phase) {
+      // phase: 'extracting' | 'verifying' | 'done'
+      const dots   = [0, 1, 2].map(i => document.getElementById('tl-dot-' + i));
+      const labels = [0, 1, 2].map(i => document.getElementById('tl-label-' + i));
+      const lines  = [0, 1].map(i => document.getElementById('tl-line-' + i));
+
+      const doneIdx = phase === 'extracting' ? -1 : phase === 'verifying' ? 0 : 2;
+      const activeIdx = phase === 'extracting' ? 0 : phase === 'verifying' ? 1 : 2;
+
+      dots.forEach((d, i) => {
+        d.className = 'timeline-dot' + (i < activeIdx ? ' done' : i === activeIdx ? ' active' : '');
+      });
+      labels.forEach((l, i) => {
+        const prefix = i < activeIdx ? '\u2713 ' : '';
+        const baseLabel = ['Extract','Verify','Report'][i];
+        l.textContent = prefix + baseLabel;
+        l.className   = 'timeline-label' + (i < activeIdx ? ' done' : i === activeIdx ? ' active' : '');
+      });
+      lines.forEach((ln, i) => {
+        ln.className = 'timeline-line' + (i < activeIdx ? ' done' : '');
+      });
+    }
+
+    async function poll() {
+      try {
+        const res  = await fetch('/api/status/' + currentJobId);
+        const data = await res.json();
+        updateWorkingUI(data);
+
+        if (data.state === 'done') {
+          clearInterval(pollTimer);
+          pollTimer = null;
+          const r2 = await fetch('/api/result/' + currentJobId);
+          fullResult = await r2.json();
+          setTimeout(transitionToDone, 400);
+        }
+      } catch (_) { /* keep polling */ }
+    }
+
+    function updateWorkingUI(data) {
+      const list   = document.getElementById('working-claim-list');
+      const claims = data.claims || [];
+
+      if (data.state === 'verifying' || data.state === 'done') setTimeline('verifying');
+      if (data.state === 'done') setTimeline('done');
+
+      claims.forEach(claim => {
+        let li = document.getElementById('wc-' + claim.id);
+
+        if (!li) {
+          li = document.createElement('li');
+          li.id = 'wc-' + claim.id;
+          li.className = 'claim-row';
+
+          const num = document.createElement('div');
+          num.className = 'claim-num';
+          num.textContent = claim.id;
+
+          const body = document.createElement('div');
+          body.className = 'claim-body';
+
+          const txt = document.createElement('div');
+          txt.className = 'claim-text';
+          txt.textContent = claim.claim_text;
+          body.appendChild(txt);
+
+          const badge = makeBadge(claim.verdict === 'pending' ? null : claim.verdict, false);
+          badge.id = 'wb-' + claim.id;
+
+          li.appendChild(num);
+          li.appendChild(body);
+          li.appendChild(badge);
+          list.appendChild(li);
+
+          lastVerdicts[claim.id] = claim.verdict;
+        } else {
+          const prev = lastVerdicts[claim.id];
+          if (claim.verdict !== prev) {
+            const old = document.getElementById('wb-' + claim.id);
+            if (old) {
+              const nb = makeBadge(claim.verdict, claim.verdict !== 'pending');
+              nb.id = 'wb-' + claim.id;
+              old.replaceWith(nb);
+            }
+            lastVerdicts[claim.id] = claim.verdict;
+          }
+        }
+      });
+
+      const resolved = claims.filter(c => c.verdict !== 'pending').length;
+      const total    = claims.length;
+      const statusEl = document.getElementById('working-status');
+
+      if (data.state === 'extracting') {
+        statusEl.textContent = 'Extracting claims\u2026';
+      } else if (data.state === 'verifying') {
+        statusEl.textContent = 'Verified ' + resolved + ' of ' + total + ' claim' + (total !== 1 ? 's' : '') + '\u2026';
+      } else {
+        statusEl.textContent = 'All ' + total + ' claims verified.';
+      }
+    }
+
+    // ── Done state ───────────────────────────────────────────────────────────
+    // The backend returns audit.json with a findings[] array where each item uses
+    // the shared-format field names (claim_verdict, claim_text, ...). We project
+    // into the shape the done view consumes so renderers stay simple.
+    function projectFindings(findings) {
+      return (findings || []).map(f => ({
+        id: f.id,
+        claim_text: f.claim_text,
+        verdict: f.claim_verdict,
+        correct_value: f.correct_value,
+        summary: f.summary,
+        limitation: f.limitation,
+        needs_human_review: f.needs_human_review,
+      }));
+    }
+
+    function transitionToDone() {
+      const findings = (fullResult && Array.isArray(fullResult.findings)) ? fullResult.findings : [];
+      buildDoneList(projectFindings(findings));
+      showState('done');
+    }
+
+    function buildDoneList(claims) {
+      let supported = 0, contradicted = 0, insufficient = 0;
+      claims.forEach(c => {
+        if (c.verdict === 'supported')             supported++;
+        else if (c.verdict === 'contradicted')     contradicted++;
+        else if (c.verdict === 'insufficient_evidence') insufficient++;
+      });
+
+      document.getElementById('stat-supported').textContent    = supported;
+      document.getElementById('stat-contradicted').textContent = contradicted;
+      document.getElementById('stat-insufficient').textContent = insufficient;
+
+      const list = document.getElementById('done-claim-list');
+      list.innerHTML = '';
+
+      claims.forEach((claim, idx) => {
+        const li = document.createElement('li');
+        li.className = 'claim-row clickable';
+        li.setAttribute('role', 'button');
+        li.setAttribute('tabindex', '0');
+
+        const num = document.createElement('div');
+        num.className = 'claim-num';
+        num.textContent = claim.id;
+
+        const body = document.createElement('div');
+        body.className = 'claim-body';
+        const txt = document.createElement('div');
+        txt.className = 'claim-text';
+        txt.textContent = claim.claim_text;
+        body.appendChild(txt);
+
+        const badge = makeBadge(claim.verdict, false);
+
+        li.appendChild(num);
+        li.appendChild(body);
+        li.appendChild(badge);
+        list.appendChild(li);
+
+        // Evidence wrap (animated)
+        const wrap = document.createElement('div');
+        wrap.className = 'evidence-wrap';
+
+        const panel = document.createElement('div');
+        panel.className = 'evidence-panel';
+
+        if (claim.verdict === 'contradicted' && claim.correct_value) {
+          const row = document.createElement('div');
+          row.className = 'evidence-contradiction';
+
+          const leftBlock = document.createElement('div');
+          leftBlock.className = 'evidence-block';
+          leftBlock.innerHTML =
+            '<div class="evidence-block-label">Report claimed</div>' +
+            '<div class="evidence-block-value report-val">' + esc(claim.claim_text) + '</div>';
+
+          const arrow = document.createElement('div');
+          arrow.className = 'evidence-arrow';
+          arrow.textContent = '\u2192';
+
+          const rightBlock = document.createElement('div');
+          rightBlock.className = 'evidence-block';
+          rightBlock.innerHTML =
+            '<div class="evidence-block-label">Data shows</div>' +
+            '<div class="evidence-block-value data-val">' + esc(claim.correct_value) + '</div>';
+
+          row.appendChild(leftBlock);
+          row.appendChild(arrow);
+          row.appendChild(rightBlock);
+          panel.appendChild(row);
+
+          const detail = document.createElement('div');
+          detail.className = 'evidence-detail';
+          // The shared format has no 'detail' field; limitation carries the
+          // reviewer-facing caveat, and summary is the verdict phrasing.
+          detail.textContent = claim.limitation || claim.summary || '';
+          panel.appendChild(detail);
+        } else {
+          panel.textContent = claim.limitation || claim.summary || '';
+        }
+
+        wrap.appendChild(panel);
+        list.appendChild(wrap);
+
+        function toggle() {
+          const isOpen = wrap.classList.contains('open');
+          // close all others
+          document.querySelectorAll('.evidence-wrap.open').forEach(w => w.classList.remove('open'));
+          if (!isOpen) wrap.classList.add('open');
+        }
+
+        li.addEventListener('click', toggle);
+        li.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+        });
+
+        // Auto-expand first claim
+        if (idx === 0) {
+          requestAnimationFrame(() => wrap.classList.add('open'));
+        }
+      });
+    }
+
+    // ── Export ───────────────────────────────────────────────────────────────
+    document.getElementById('export-btn').addEventListener('click', () => {
+      if (!fullResult) return;
+      const blob = new Blob([JSON.stringify(fullResult, null, 2)], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'audit.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // ── New Audit ────────────────────────────────────────────────────────────
+    document.getElementById('new-audit-btn').addEventListener('click', () => {
+      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+      currentJobId     = null;
+      fullResult       = null;
+      lastVerdicts     = {};
+      droppedFileText  = '';
+      textarea.value   = '';
+      fileInput.value  = '';
+
+      dropLabelP.textContent   = 'Drop a .txt or .md file here';
+      dropLabelS.style.display = 'block';
+      dropLabelS.textContent   = 'or click to browse';
+      dropLabelF.style.display = 'none';
+
+      auditBtn.disabled = true;
+      showState('ready');
+    });
+  </script>
+</body>
+</html>
