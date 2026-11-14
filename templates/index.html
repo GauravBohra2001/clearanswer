@@ -68,15 +68,16 @@
 
     /* ── Brand mark ── */
     .brand-mark {
-      font-size: 11px;
-      font-weight: 500;
+      font-size: 18px;
+      font-weight: 700;
       letter-spacing: 1px;
       text-transform: uppercase;
-      color: var(--mute);
-      text-align: center;
-      display: block;
-      width: 100%;
-      margin: 0 auto;
+      color: var(--ink);
+      display: inline-block;
+      /* Shift the brand mark visibly left for optical balance against the
+         right-weighted illustration below. Tune the translateX value if you
+         want more or less shift. */
+      transform: translateX(-12px);
     }
 
     /* ── Illustration area ── */
@@ -347,18 +348,24 @@
     }
 
     .claim-num {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
+      /* IDs like "F-001" are 5 chars; a 24px fixed circle clipped them.
+         Pill shape with a min-width keeps the badge round for single-digit
+         content while letting it grow horizontally for the real IDs. */
+      min-width: 44px;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 999px;
       background: var(--tile);
       color: var(--slate);
       font-size: 11px;
       font-weight: 600;
-      display: flex;
+      line-height: 1;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
       margin-top: 1px;
+      white-space: nowrap;
     }
 
     .claim-body {
