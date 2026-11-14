@@ -198,7 +198,14 @@ def export_audit(job_id: str | None = None):
     if job["state"] != "done" or not job["result"]:
         return jsonify({"state": job["state"], "message": "still processing"}), 202
 
-    audit = _prepare_for_submission(job["result"])
+    overrides = None
+    body = request.get_json(silent=True)
+    if isinstance(body, dict):
+        candidate = body.get("overrides")
+        if isinstance(candidate, list):
+            overrides = candidate
+
+    audit = _prepare_for_submission(job["result"], overrides=overrides)
     OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
     out_path = OUTPUTS_DIR / f"audit-{job_id}.json"
     out_path.write_text(json.dumps(audit, indent=2), encoding="utf-8")
@@ -278,13 +285,16 @@ def _extract_report_text(req) -> str:
     )
 
 
-def _prepare_for_submission(audit: dict) -> dict:
+def _prepare_for_submission(audit: dict, overrides: list[dict] | None = None) -> dict:
     """Return a copy of the audit dict shaped for the judges' checker.
 
     Changes vs the stored audit:
     - drops the private _trace key the shared format does not define
-    - applies the submission severity policy: high for contradicted,
-      medium for insufficient_evidence, none for supported
+    - applies reviewer accept/override decisions so the shipped verdict is
+      the one the human confirmed, while preserving the tool's original
+      verdict under tool_verdict for provenance
+    - applies the submission severity policy to the FINAL verdict: high for
+      contradicted, medium for insufficient_evidence, none for supported
     - sets confidence to high on every finding, because the verdict comes
       from a deterministic pandas computation, not from model sampling
     - guarantees every finding carries at least one evidence entry, since
@@ -297,8 +307,30 @@ def _prepare_for_submission(audit: dict) -> dict:
         "contradicted": "high",
         "insufficient_evidence": "medium",
     }
+
+    override_map: dict[str, dict] = {}
+    if overrides:
+        for o in overrides:
+            if isinstance(o, dict) and o.get("finding_id"):
+                override_map[o["finding_id"]] = o
+
     for finding in submission.get("findings", []):
+        fid = finding.get("id")
         verdict = finding.get("claim_verdict", "")
+
+        ov = override_map.get(fid)
+        if ov:
+            finding["tool_verdict"] = verdict
+            decision = ov.get("decision", "accept")
+            finding["reviewer_decision"] = decision
+            if decision == "override" and ov.get("verdict"):
+                finding["claim_verdict"] = ov["verdict"]
+                verdict = ov["verdict"]
+            if ov.get("reason"):
+                finding["reviewer_reason"] = ov["reason"]
+            # A claim the reviewer touched no longer needs review.
+            finding["needs_human_review"] = False
+
         finding["severity"] = severity_by_verdict.get(verdict, finding.get("severity", "none"))
         finding["confidence"] = "high"
         if not finding.get("evidence"):

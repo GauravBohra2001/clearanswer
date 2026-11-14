@@ -542,6 +542,251 @@
     /* ── State visibility ── */
     .state { display: none; }
     .state.active { display: block; }
+
+    /* ── Tier 2: review queue + drill-down + badges ────────────────────── */
+
+    /* Progress counter in the card header. */
+    .review-progress { margin-top: 6px; }
+    .review-progress-text {
+      font-size: 13px;
+      color: var(--slate);
+      margin-bottom: 4px;
+    }
+    .review-progress-bar {
+      width: 100%;
+      height: 4px;
+      background: var(--tile);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .review-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--primary);
+      border-radius: 2px;
+      transition: width 200ms ease-out;
+    }
+
+    /* Human-review badge sits next to the verdict badge. */
+    .needs-review-badge {
+      display: inline-flex;
+      align-items: center;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      background: var(--insufficient-bg);
+      color: var(--insufficient-fg);
+      margin-left: 6px;
+    }
+
+    /* Limitation one-liner under claim text. */
+    .limitation-line {
+      font-size: 12px;
+      color: var(--mute);
+      font-style: italic;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Review actions row (Accept + Override, then the inline form). */
+    .review-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+      align-items: center;
+    }
+    .pill-btn {
+      display: inline-flex;
+      align-items: center;
+      height: 30px;
+      padding: 0 14px;
+      border-radius: 999px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 150ms, color 150ms, opacity 150ms;
+    }
+    .pill-accept {
+      background: var(--primary);
+      color: #fff;
+    }
+    .pill-accept:hover { filter: brightness(1.05); }
+    .pill-override {
+      background: transparent;
+      color: var(--contradicted-fg);
+      border-color: var(--contradicted-fg);
+    }
+    .pill-override:hover { background: var(--contradicted-bg); }
+    .pill-btn.muted {
+      opacity: 0.6;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    /* Inline override form. */
+    .override-form {
+      width: 100%;
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: var(--tile);
+      border-radius: 10px;
+      display: none;
+    }
+    .override-form.open { display: block; }
+    .override-form-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--mute);
+      margin-bottom: 6px;
+    }
+    .override-pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .override-pill {
+      display: inline-flex;
+      align-items: center;
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--slate);
+    }
+    .override-pill.selected-supported {
+      background: var(--supported-bg);
+      color: var(--supported-fg);
+      border-color: var(--supported-fg);
+    }
+    .override-pill.selected-contradicted {
+      background: var(--contradicted-bg);
+      color: var(--contradicted-fg);
+      border-color: var(--contradicted-fg);
+    }
+    .override-pill.selected-insufficient_evidence {
+      background: var(--insufficient-bg);
+      color: var(--insufficient-fg);
+      border-color: var(--insufficient-fg);
+    }
+    .override-reason {
+      width: 100%;
+      height: 36px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--ink);
+      background: #fff;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+    .override-reason:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .override-form-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    /* Done-state badges with both verdicts shown after override. */
+    .verdict-stack {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .verdict-stack .badge.strike {
+      opacity: 0.5;
+      text-decoration: line-through;
+    }
+    .verdict-stack .arrow {
+      color: var(--mute);
+      font-size: 14px;
+    }
+    .reason-line {
+      font-size: 12px;
+      font-style: italic;
+      color: var(--slate);
+      margin-top: 6px;
+    }
+
+    /* Evidence drill-down sections. */
+    .drill-section { margin-top: 10px; }
+    .drill-section:first-child { margin-top: 0; }
+    .drill-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--mute);
+      margin-bottom: 4px;
+    }
+    .drill-tree {
+      font-family: 'DM Sans', monospace, sans-serif;
+      font-size: 13px;
+      color: var(--slate);
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .reasoning-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      cursor: pointer;
+      margin-top: 8px;
+      background: none;
+      border: none;
+      padding: 0;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .reasoning-panel {
+      display: none;
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .reasoning-panel.open { display: block; }
+    .reasoning-step {
+      font-size: 12px;
+      color: var(--mute);
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .reasoning-step:last-child { margin-bottom: 0; }
+    .reasoning-stage {
+      font-weight: 600;
+      color: var(--slate);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 10px;
+      margin-right: 6px;
+    }
+
+    /* Expand the max-height cap so the enriched evidence panel does not get clipped. */
+    .evidence-wrap.open { max-height: 1500px; }
   </style>
 </head>
 <body>
@@ -781,6 +1026,10 @@
       <div class="card">
         <div class="card-header">
           <h2>Claim Details</h2>
+          <div class="review-progress" id="review-progress">
+            <div class="review-progress-text" id="review-progress-text">0 of 0 claims reviewed</div>
+            <div class="review-progress-bar"><div class="review-progress-fill" id="review-progress-fill"></div></div>
+          </div>
         </div>
         <div class="card-divider"></div>
         <ul class="claim-list" id="done-claim-list"></ul>
@@ -804,6 +1053,9 @@
     let pollTimer      = null;
     let lastVerdicts   = {};   // id → verdict string
     let fullResult     = null;
+    // Reviewer decisions live only in this browser. The server is stateless;
+    // overrides only reach the backend when the user clicks Export.
+    let reviewState    = {};   // finding_id → {decision, verdict?, reason?, timestamp}
 
     // ── Utils ────────────────────────────────────────────────────────────────
     function showState(name) {
@@ -1055,92 +1307,410 @@
       const list = document.getElementById('done-claim-list');
       list.innerHTML = '';
 
+      // Fresh audit, fresh review slate. A reviewer starts from zero on every
+      // new run so stale decisions never bleed into a different report.
+      reviewState = {};
+
       claims.forEach((claim, idx) => {
-        const li = document.createElement('li');
-        li.className = 'claim-row clickable';
-        li.setAttribute('role', 'button');
-        li.setAttribute('tabindex', '0');
+        renderDoneClaim(claim, list, idx === 0);
+      });
 
-        const num = document.createElement('div');
-        num.className = 'claim-num';
-        num.textContent = claim.id;
+      updateReviewProgress(claims.length);
+    }
 
+    // Render one claim row plus its drill-down panel. Keeping this in one
+    // function makes the click handlers for review/override close over the
+    // specific claim and its DOM nodes without extra plumbing.
+    function renderDoneClaim(claim, list, autoExpand) {
+      const li = document.createElement('li');
+      li.className = 'claim-row clickable';
+      li.setAttribute('role', 'button');
+      li.setAttribute('tabindex', '0');
+
+      const num = document.createElement('div');
+      num.className = 'claim-num';
+      num.textContent = claim.id;
+
+      const body = document.createElement('div');
+      body.className = 'claim-body';
+
+      const txt = document.createElement('div');
+      txt.className = 'claim-text';
+      txt.textContent = claim.claim_text;
+      body.appendChild(txt);
+
+      if (claim.limitation) {
+        const lim = document.createElement('div');
+        lim.className = 'limitation-line';
+        lim.title = claim.limitation;
+        lim.textContent = claim.limitation;
+        body.appendChild(lim);
+      }
+
+      // Verdict stack holds the original badge and, after an override, the new badge.
+      const verdictStack = document.createElement('div');
+      verdictStack.className = 'verdict-stack';
+      const origBadge = makeBadge(claim.verdict, false);
+      verdictStack.appendChild(origBadge);
+
+      // Needs-review badge, tucked into the verdict stack so it clears on review.
+      let needsBadge = null;
+      if (claim.needs_human_review) {
+        needsBadge = document.createElement('span');
+        needsBadge.className = 'needs-review-badge';
+        needsBadge.textContent = '\u26a0 Needs review';
+        verdictStack.appendChild(needsBadge);
+      }
+
+      // Review controls row.
+      const reviewRow = document.createElement('div');
+      reviewRow.className = 'review-actions';
+
+      const acceptBtn = document.createElement('button');
+      acceptBtn.type = 'button';
+      acceptBtn.className = 'pill-btn pill-accept';
+      acceptBtn.textContent = '\u2713 Accept';
+
+      const overrideBtn = document.createElement('button');
+      overrideBtn.type = 'button';
+      overrideBtn.className = 'pill-btn pill-override';
+      overrideBtn.textContent = '\u270e Override';
+
+      reviewRow.appendChild(acceptBtn);
+      reviewRow.appendChild(overrideBtn);
+      body.appendChild(reviewRow);
+
+      // Inline override form. Hidden by default; toggled when Override is clicked.
+      const form = buildOverrideForm(claim, {
+        onCancel: () => form.classList.remove('open'),
+        onConfirm: (verdict, reason) => {
+          reviewState[claim.id] = { decision: 'override', verdict, reason, timestamp: Date.now() };
+          applyOverrideUI(claim, verdict, reason, verdictStack, origBadge, acceptBtn, overrideBtn, needsBadge, body);
+          form.classList.remove('open');
+          updateReviewProgress(currentFindingCount());
+        },
+      });
+      body.appendChild(form);
+
+      // Reason line (filled when the user confirms an override).
+      const reasonLine = document.createElement('div');
+      reasonLine.className = 'reason-line';
+      reasonLine.id = 'reason-' + claim.id;
+      body.appendChild(reasonLine);
+
+      acceptBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        reviewState[claim.id] = { decision: 'accept', timestamp: Date.now() };
+        applyAcceptUI(acceptBtn, overrideBtn, needsBadge);
+        updateReviewProgress(currentFindingCount());
+      });
+
+      overrideBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        form.classList.toggle('open');
+      });
+
+      li.appendChild(num);
+      li.appendChild(body);
+      li.appendChild(verdictStack);
+      list.appendChild(li);
+
+      // Evidence drill-down wrap.
+      const wrap = document.createElement('div');
+      wrap.className = 'evidence-wrap';
+      const panel = document.createElement('div');
+      panel.className = 'evidence-panel';
+      buildEvidencePanel(claim, panel);
+      wrap.appendChild(panel);
+      list.appendChild(wrap);
+
+      function toggle(e) {
+        // Clicks inside the review row or form must not toggle the drill-down.
+        if (e && (e.target.closest('.review-actions') || e.target.closest('.override-form'))) return;
+        const isOpen = wrap.classList.contains('open');
+        document.querySelectorAll('.evidence-wrap.open').forEach(w => w.classList.remove('open'));
+        if (!isOpen) wrap.classList.add('open');
+      }
+
+      li.addEventListener('click', toggle);
+      li.addEventListener('keydown', e => {
+        if (e.target.closest('.review-actions')) return;
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(e); }
+      });
+
+      if (autoExpand) {
+        requestAnimationFrame(() => wrap.classList.add('open'));
+      }
+    }
+
+    // Apply styling for an accepted verdict. Keeps the current badge intact
+    // because "accept" means the tool got it right.
+    function applyAcceptUI(acceptBtn, overrideBtn, needsBadge) {
+      acceptBtn.textContent = '\u2713 Accepted';
+      acceptBtn.classList.add('muted');
+      overrideBtn.style.display = 'none';
+      if (needsBadge) needsBadge.remove();
+    }
+
+    // Apply styling for an override: both verdicts stay visible side by side
+    // so the reviewer can see what the tool said and what they chose instead.
+    function applyOverrideUI(claim, newVerdict, reason, verdictStack, origBadge, acceptBtn, overrideBtn, needsBadge, body) {
+      // Strike the original and prepend an arrow + new badge.
+      origBadge.classList.add('strike');
+      // Clear anything added by a previous override attempt.
+      verdictStack.querySelectorAll('.badge:not(:first-child), .arrow').forEach(n => n.remove());
+      const arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.textContent = '\u2192';
+      const newBadge = makeBadge(newVerdict, true);
+      verdictStack.appendChild(arrow);
+      verdictStack.appendChild(newBadge);
+
+      overrideBtn.textContent = '\u270e Overridden';
+      overrideBtn.classList.add('muted');
+      acceptBtn.style.display = 'none';
+      if (needsBadge) needsBadge.remove();
+
+      const reasonLine = document.getElementById('reason-' + claim.id);
+      if (reasonLine) reasonLine.textContent = reason ? 'Reason: ' + reason : '';
+    }
+
+    // Build the override form with 3 verdict pills and a reason input.
+    function buildOverrideForm(claim, handlers) {
+      const form = document.createElement('div');
+      form.className = 'override-form';
+
+      const label = document.createElement('div');
+      label.className = 'override-form-label';
+      label.textContent = 'Choose new verdict';
+      form.appendChild(label);
+
+      const pillRow = document.createElement('div');
+      pillRow.className = 'override-pill-row';
+
+      let selected = claim.verdict;
+      const verdicts = [
+        { key: 'supported',             text: 'Supported' },
+        { key: 'contradicted',          text: 'Contradicted' },
+        { key: 'insufficient_evidence', text: 'Insufficient evidence' },
+      ];
+      const pillEls = {};
+      verdicts.forEach(v => {
+        const p = document.createElement('button');
+        p.type = 'button';
+        p.className = 'override-pill';
+        p.textContent = v.text;
+        p.dataset.verdict = v.key;
+        p.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selected = v.key;
+          Object.values(pillEls).forEach(el => {
+            el.className = 'override-pill';
+          });
+          p.classList.add('selected-' + v.key);
+        });
+        pillRow.appendChild(p);
+        pillEls[v.key] = p;
+      });
+      // Default select the current verdict so the reviewer can just change
+      // the reason without re-picking a verdict.
+      if (pillEls[selected]) pillEls[selected].classList.add('selected-' + selected);
+
+      form.appendChild(pillRow);
+
+      const reason = document.createElement('input');
+      reason.type = 'text';
+      reason.className = 'override-reason';
+      reason.placeholder = 'Reason for override\u2026';
+      reason.addEventListener('click', e => e.stopPropagation());
+      form.appendChild(reason);
+
+      const actions = document.createElement('div');
+      actions.className = 'override-form-actions';
+      const confirm = document.createElement('button');
+      confirm.type = 'button';
+      confirm.className = 'btn-primary';
+      confirm.textContent = 'Confirm Override';
+      confirm.style.height = '32px';
+      confirm.style.padding = '0 14px';
+      confirm.style.fontSize = '12px';
+      const cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.className = 'btn-text';
+      cancel.textContent = 'Cancel';
+      actions.appendChild(confirm);
+      actions.appendChild(cancel);
+      form.appendChild(actions);
+
+      confirm.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handlers.onConfirm(selected, reason.value.trim());
+      });
+      cancel.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handlers.onCancel();
+      });
+
+      return form;
+    }
+
+    // Count the number of findings currently rendered so the progress line
+    // does not drift if we ever filter or hide any.
+    function currentFindingCount() {
+      return document.querySelectorAll('#done-claim-list > li.claim-row').length;
+    }
+
+    function updateReviewProgress(total) {
+      const reviewed = Object.keys(reviewState).length;
+      const textEl = document.getElementById('review-progress-text');
+      const fillEl = document.getElementById('review-progress-fill');
+      if (!textEl || !fillEl) return;
+      const t = Math.max(total || 0, 0);
+      textEl.textContent = reviewed + ' of ' + t + ' claim' + (t !== 1 ? 's' : '') + ' reviewed';
+      const pct = t === 0 ? 0 : Math.round((reviewed / t) * 100);
+      fillEl.style.width = pct + '%';
+    }
+
+    // Build the enriched evidence drill-down from data that already lives
+    // in fullResult. Nothing here is generated or paraphrased.
+    function buildEvidencePanel(claim, panel) {
+      const finding = findRawFinding(claim.id);
+
+      // 1. Contradiction comparison block (unchanged behavior).
+      if (claim.verdict === 'contradicted' && claim.correct_value) {
+        const row = document.createElement('div');
+        row.className = 'evidence-contradiction';
+        const left = document.createElement('div');
+        left.className = 'evidence-block';
+        left.innerHTML =
+          '<div class="evidence-block-label">Report claimed</div>' +
+          '<div class="evidence-block-value report-val">' + esc(claim.claim_text) + '</div>';
+        const arr = document.createElement('div');
+        arr.className = 'evidence-arrow';
+        arr.textContent = '\u2192';
+        const right = document.createElement('div');
+        right.className = 'evidence-block';
+        right.innerHTML =
+          '<div class="evidence-block-label">Data shows</div>' +
+          '<div class="evidence-block-value data-val">' + esc(claim.correct_value) + '</div>';
+        row.appendChild(left);
+        row.appendChild(arr);
+        row.appendChild(right);
+        panel.appendChild(row);
+      }
+
+      // 2. Sources section from finding.evidence[]. Shown only when present.
+      const sources = (finding && Array.isArray(finding.evidence)) ? finding.evidence : [];
+      if (sources.length) {
+        const sec = document.createElement('div');
+        sec.className = 'drill-section';
+        const lab = document.createElement('div');
+        lab.className = 'drill-label';
+        lab.textContent = 'Sources';
+        sec.appendChild(lab);
+        const tree = document.createElement('div');
+        tree.className = 'drill-tree';
+        tree.textContent = sources.map((ev, i) => {
+          const isLast = i === sources.length - 1;
+          const prefix = isLast ? '\u2514\u2500 ' : '\u251c\u2500 ';
+          const parts = [];
+          if (ev.file)    parts.push(ev.file);
+          else if (ev.id) parts.push(ev.id);
+          if (ev.kind)    parts.push('(' + ev.kind + ')');
+          if (ev.note)    parts.push('\u2192 ' + ev.note);
+          if (ev.release) parts.push('release: ' + ev.release);
+          return prefix + parts.join(' ');
+        }).join('\n');
+        sec.appendChild(tree);
+        panel.appendChild(sec);
+      }
+
+      // 3. Limitation / summary caveat.
+      const caveat = claim.limitation || claim.summary;
+      if (caveat) {
+        const sec = document.createElement('div');
+        sec.className = 'drill-section';
+        const lab = document.createElement('div');
+        lab.className = 'drill-label';
+        lab.textContent = claim.verdict === 'insufficient_evidence' ? 'What was missing' : 'Caveat';
+        sec.appendChild(lab);
         const body = document.createElement('div');
-        body.className = 'claim-body';
-        const txt = document.createElement('div');
-        txt.className = 'claim-text';
-        txt.textContent = claim.claim_text;
-        body.appendChild(txt);
+        body.className = 'evidence-detail';
+        body.textContent = caveat;
+        sec.appendChild(body);
+        panel.appendChild(sec);
+      }
 
-        const badge = makeBadge(claim.verdict, false);
+      // 4. Agent reasoning, filtered to steps that mention this claim's text.
+      const steps = filterTraceForClaim(claim.claim_text);
+      if (steps.length) {
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'reasoning-toggle';
+        toggle.textContent = '\u25b8 Show reasoning (' + steps.length + ' step' + (steps.length !== 1 ? 's' : '') + ')';
 
-        li.appendChild(num);
-        li.appendChild(body);
-        li.appendChild(badge);
-        list.appendChild(li);
-
-        // Evidence wrap (animated)
-        const wrap = document.createElement('div');
-        wrap.className = 'evidence-wrap';
-
-        const panel = document.createElement('div');
-        panel.className = 'evidence-panel';
-
-        if (claim.verdict === 'contradicted' && claim.correct_value) {
-          const row = document.createElement('div');
-          row.className = 'evidence-contradiction';
-
-          const leftBlock = document.createElement('div');
-          leftBlock.className = 'evidence-block';
-          leftBlock.innerHTML =
-            '<div class="evidence-block-label">Report claimed</div>' +
-            '<div class="evidence-block-value report-val">' + esc(claim.claim_text) + '</div>';
-
-          const arrow = document.createElement('div');
-          arrow.className = 'evidence-arrow';
-          arrow.textContent = '\u2192';
-
-          const rightBlock = document.createElement('div');
-          rightBlock.className = 'evidence-block';
-          rightBlock.innerHTML =
-            '<div class="evidence-block-label">Data shows</div>' +
-            '<div class="evidence-block-value data-val">' + esc(claim.correct_value) + '</div>';
-
-          row.appendChild(leftBlock);
-          row.appendChild(arrow);
-          row.appendChild(rightBlock);
-          panel.appendChild(row);
-
-          const detail = document.createElement('div');
-          detail.className = 'evidence-detail';
-          // The shared format has no 'detail' field; limitation carries the
-          // reviewer-facing caveat, and summary is the verdict phrasing.
-          detail.textContent = claim.limitation || claim.summary || '';
-          panel.appendChild(detail);
-        } else {
-          panel.textContent = claim.limitation || claim.summary || '';
-        }
-
-        wrap.appendChild(panel);
-        list.appendChild(wrap);
-
-        function toggle() {
-          const isOpen = wrap.classList.contains('open');
-          // close all others
-          document.querySelectorAll('.evidence-wrap.open').forEach(w => w.classList.remove('open'));
-          if (!isOpen) wrap.classList.add('open');
-        }
-
-        li.addEventListener('click', toggle);
-        li.addEventListener('keydown', e => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+        const rpanel = document.createElement('div');
+        rpanel.className = 'reasoning-panel';
+        steps.forEach(s => {
+          const step = document.createElement('div');
+          step.className = 'reasoning-step';
+          const stage = document.createElement('span');
+          stage.className = 'reasoning-stage';
+          stage.textContent = s.stage;
+          step.appendChild(stage);
+          const text = document.createElement('span');
+          text.textContent = s.reasoning || summarizeIO(s);
+          step.appendChild(text);
+          rpanel.appendChild(step);
         });
 
-        // Auto-expand first claim
-        if (idx === 0) {
-          requestAnimationFrame(() => wrap.classList.add('open'));
+        toggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const open = rpanel.classList.toggle('open');
+          toggle.textContent = (open ? '\u25be Hide' : '\u25b8 Show') + ' reasoning (' + steps.length + ' step' + (steps.length !== 1 ? 's' : '') + ')';
+        });
+
+        panel.appendChild(toggle);
+        panel.appendChild(rpanel);
+      }
+    }
+
+    function findRawFinding(id) {
+      if (!fullResult || !Array.isArray(fullResult.findings)) return null;
+      return fullResult.findings.find(f => f.id === id) || null;
+    }
+
+    // Pull verifier steps from _trace that belong to this claim. The verifier
+    // emits a "plan" step whose input_data carries the claim text, which is
+    // our anchor; everything after it until the next plan belongs to this claim.
+    function filterTraceForClaim(claimText) {
+      if (!fullResult || !Array.isArray(fullResult._trace)) return [];
+      const trace = fullResult._trace;
+      const verifierSteps = trace.filter(s => s.agent_name === 'verifier');
+      // Segment by plan boundaries.
+      const segments = [];
+      let current = null;
+      verifierSteps.forEach(s => {
+        if (s.stage === 'plan' && s.input_data && s.input_data.claim) {
+          if (current) segments.push(current);
+          current = { claim: s.input_data.claim, steps: [s] };
+        } else if (current) {
+          current.steps.push(s);
         }
       });
+      if (current) segments.push(current);
+      const match = segments.find(seg => seg.claim === claimText);
+      return match ? match.steps : [];
+    }
+
+    function summarizeIO(step) {
+      if (step.stage === 'execute' && step.input_data && step.input_data.tool) {
+        return 'Tool: ' + step.input_data.tool;
+      }
+      if (step.output_data && step.output_data.verdict) {
+        return 'Verdict: ' + step.output_data.verdict;
+      }
+      return '';
     }
 
     // ── Export ───────────────────────────────────────────────────────────────
@@ -1157,7 +1727,18 @@
       statusEl.textContent = '';
 
       try {
-        const res = await fetch('/api/export/' + currentJobId, { method: 'POST' });
+        // Pack reviewer decisions into the shape the backend expects.
+        const overrides = Object.entries(reviewState).map(([id, r]) => {
+          const o = { finding_id: id, decision: r.decision };
+          if (r.verdict) o.verdict = r.verdict;
+          if (r.reason)  o.reason  = r.reason;
+          return o;
+        });
+        const res = await fetch('/api/export/' + currentJobId, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ overrides }),
+        });
         if (!res.ok) throw new Error('export failed (' + res.status + ')');
         const data = await res.json();
         const flag = data.valid ? '✓ valid' : '✗ INVALID';
@@ -1187,6 +1768,7 @@
       currentJobId     = null;
       fullResult       = null;
       lastVerdicts     = {};
+      reviewState      = {};
       droppedFileText  = '';
       textarea.value   = '';
       fileInput.value  = '';
