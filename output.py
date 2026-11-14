@@ -127,6 +127,8 @@ def claim_result_to_finding(
     finding["next_step"] = result.next_step or _next_step(result, release_name)
     if result.cannot_tell:
         finding["cannot_tell"] = result.cannot_tell
+    if result.alternatives:
+        finding["alternatives"] = result.alternatives
     return finding
 
 

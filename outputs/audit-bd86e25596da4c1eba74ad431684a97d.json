@@ -1,0 +1,75 @@
+{
+  "format_version": "0.2",
+  "producer": {
+    "team": "clearanswer",
+    "product": "research-claim-auditor",
+    "track": "evidence-navigator"
+  },
+  "data": {
+    "dataset": "TCGA-BRCA",
+    "releases": [
+      {
+        "name": "raw",
+        "files": [
+          {
+            "file": "clinical.tsv",
+            "sha256": "39eb3be0fb86e6a577bd2cc01502a7fa5a271e1e1cba294e9dc644ad99580d7f",
+            "hash_of": "file"
+          },
+          {
+            "file": "survival.tsv",
+            "sha256": "6c9e18ae9c2b8bacc48cd5a60cde97e8880ae2e84e48df437a0378b17e659b73",
+            "hash_of": "file"
+          },
+          {
+            "file": "mutation_gene_level.tsv.gz",
+            "sha256": "ceaf6a01fd983cefc7fca8b52f6c65121acc87b75f4d170b9fcdc07ee16a3813",
+            "hash_of": "file"
+          },
+          {
+            "file": "copy_number_gistic.tsv.gz",
+            "sha256": "c45b1f8ea19c8dc20bd614d0863a40cccc633518d0ad05d2c7fff5f75781e980",
+            "hash_of": "file"
+          },
+          {
+            "file": "protein_rppa.tsv.gz",
+            "sha256": "7823a7a375495f7e5f114d0c7ec8773e070cb9ac409785f98045d12ab71195e6",
+            "hash_of": "file"
+          },
+          {
+            "file": "rna_hiseq.tsv.gz",
+            "sha256": "263bf67245cc4b9062676583c0ff0306f08471a26aafd5504037e1da22133746",
+            "hash_of": "file"
+          }
+        ]
+      }
+    ]
+  },
+  "question": "Check the factual claims in the report against the TCGA-BRCA release. (report: /var/folders/s3/8szxbq_97gd9h3wzx3ct9kcr0000gn/T/clearanswer_jobs/bd86e25596da4c1eba74ad431684a97d/report.md)",
+  "findings": [
+    {
+      "id": "F-001",
+      "kind": "claim_check",
+      "summary": "Supported: The release contains 1,101 primary tumors.",
+      "severity": "none",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-001",
+          "note": "The release contains 1,101 primary tumors."
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "release": "raw"
+        }
+      ],
+      "claim_text": "The release contains 1,101 primary tumors.",
+      "claim_verdict": "supported",
+      "needs_human_review": true,
+      "why_it_matters": "The primary-tumor count is the fundamental denominator for every downstream analysis in the release; confirming it is correct means subtype rates, mutation frequencies, and survival statistics derived from this cohort all rest on the right baseline N.",
+      "next_step": "No correction needed. The figure of 1,101 primary tumors may be cited as-is wherever it appears in the report."
+    }
+  ]
+}

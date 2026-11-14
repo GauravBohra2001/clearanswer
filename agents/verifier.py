@@ -21,6 +21,7 @@ from config import MAX_RETRIES
 from core.evidence import ClaimResult, Evidence, contradicted, insufficient, supported
 from core.loader import LAYER_FILES, TCGARelease
 from core.semantic import check_cannot_answer, get_schema_summary_for_prompt
+from core.tolerance import check_tolerance
 from core.trace import TraceCollector
 from tools.data_tool import DataTool
 from tools.manifest_tool import ManifestTool
@@ -86,6 +87,21 @@ IMPORTANT RULES:
 - Use the "LIMITATION" field on columns to inform your limitation text.
 - When a sentence mentions treatment response, hormone therapy, drug
   efficacy, or causal relationships, the answer is ALWAYS insufficient_evidence.
+
+ROUNDING TOLERANCE:
+- Exact counts (e.g. "1,098 patients"): must match exactly.
+- Percentages with decimals (e.g. "49.9%"): supported if within +/- 0.5pp of data.
+- Approximate language ("about 50%", "roughly half"): supported if within
+  +/- 1.5pp or 5% relative.
+- If within tolerance, verdict is 'supported'. Note the exact value in reasoning.
+
+ALTERNATIVE DEFINITIONS:
+When a claim could be answered using different columns or denominators (e.g.
+"ER-positive" could use breast_carcinoma_estrogen_receptor_status or the
+PAM50 Luminal subtype), check the primary interpretation AND fill the
+'alternatives' array in finalize_verdict with what other columns show. This
+helps reviewers see when the answer depends on a definitional choice the
+report did not specify.
 
 IMPACT ANALYSIS (fill these in finalize_verdict):
 - why_it_matters: one sentence on why THIS specific finding matters. Refer to
@@ -169,6 +185,24 @@ def _finalize_tool_schema() -> dict:
                         "(optional). E.g. 'This check used the frozen TCGA-BRCA "
                         "release; a newer GDC release may have different counts.' "
                         "Omit if there is nothing beyond the limitation."
+                    ),
+                },
+                "alternatives": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "column": {"type": "string"},
+                            "value": {"type": "string"},
+                            "note": {"type": "string"},
+                        },
+                    },
+                    "description": (
+                        "Alternative ways to answer the same question using different "
+                        "columns or denominators (optional). E.g. if the claim says "
+                        "'ER-positive rate is 76%', check er_status_by_ihc AND note "
+                        "that PAM50 Luminal classification gives a different number. "
+                        "Each entry: {column, value, note}."
                     ),
                 },
             },
@@ -390,8 +424,20 @@ class VerifierAgent(BaseAgent):
         why_it_matters = final_input.get("why_it_matters")
         next_step = final_input.get("next_step")
         cannot_tell = final_input.get("cannot_tell")
+        alternatives = final_input.get("alternatives")
 
         evidence = self._build_evidence(tool_history, files)
+
+        # Tolerance safety net: if Claude says contradicted but the numbers
+        # are within rounding tolerance, upgrade to supported with a note.
+        if verdict == "contradicted" and correct_value:
+            tolerance_note = check_tolerance(claim_text, correct_value)
+            if tolerance_note:
+                verdict = "supported"
+                severity = "none"
+                reasoning = f"{reasoning} [Tolerance: {tolerance_note}]"
+                if not limitation:
+                    limitation = tolerance_note
 
         if verdict == "contradicted":
             if not correct_value:
@@ -431,6 +477,7 @@ class VerifierAgent(BaseAgent):
         result.why_it_matters = why_it_matters
         result.next_step = next_step
         result.cannot_tell = cannot_tell
+        result.alternatives = alternatives
         return result
 
     def _build_evidence(

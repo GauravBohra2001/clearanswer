@@ -68,6 +68,7 @@ class ClaimResult:
     why_it_matters: Optional[str] = None
     next_step: Optional[str] = None
     cannot_tell: Optional[str] = None
+    alternatives: Optional[list] = None  # [{column, value, note}, ...]
 
     def __post_init__(self) -> None:
         if self.claim_verdict not in VERDICTS:

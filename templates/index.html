@@ -1723,6 +1723,34 @@
         panel.appendChild(sec);
       }
 
+      // 3c. Alternative definitions: when the verifier LLM noted that another
+      // column could answer the same question (e.g. ER status by IHC vs PAM50
+      // Luminal), show those side-by-side so the reviewer sees the definitional
+      // choice the report may have left implicit.
+      const alternatives = finding && Array.isArray(finding.alternatives) ? finding.alternatives : [];
+      if (alternatives.length) {
+        const sec = document.createElement('div');
+        sec.className = 'drill-section';
+        const altCard = document.createElement('div');
+        altCard.style.cssText = 'background: var(--alt-bg, #f0f4f8); border-left: 3px solid var(--alt-border, #6b7280); border-radius: 6px; padding: 12px 16px; margin-top: 4px;';
+        const lab = document.createElement('div');
+        lab.className = 'drill-label';
+        lab.textContent = 'Same question, different column';
+        altCard.appendChild(lab);
+        alternatives.forEach(alt => {
+          const row = document.createElement('div');
+          row.style.cssText = 'margin-top: 6px; font-size: 0.92em;';
+          const parts = [];
+          if (alt.column) parts.push('<strong>' + esc(alt.column) + '</strong>');
+          if (alt.value) parts.push(esc(alt.value));
+          if (alt.note) parts.push('<em style="opacity:0.8">' + esc(alt.note) + '</em>');
+          row.innerHTML = parts.join(' - ');
+          altCard.appendChild(row);
+        });
+        sec.appendChild(altCard);
+        panel.appendChild(sec);
+      }
+
       // 4. Sources: collapsed by default. Reviewers who want to trace back
       // to files expand it on demand; otherwise it stays out of the way.
       const sources = (finding && Array.isArray(finding.evidence)) ? finding.evidence : [];
