@@ -1107,6 +1107,7 @@
 
       <div class="done-actions">
         <button class="btn-primary" id="export-btn">Export audit.json</button>
+        <button class="btn-text"    id="export-html-btn">Download HTML report</button>
         <button class="btn-text"    id="new-audit-btn">New Audit</button>
       </div>
       <p id="export-status" class="page-footer" style="min-height:1.25em"></p>
@@ -1903,6 +1904,52 @@
         a.remove();
       } catch (err) {
         statusEl.textContent = 'Export error: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = prevLabel;
+      }
+    });
+
+    // ── HTML report download ─────────────────────────────────────────────────
+    // Fetches a self-contained .html file the reviewer can save, email, or
+    // print. Sends the same reviewer overrides as the JSON export so the
+    // report reflects accept/override decisions made in the UI.
+    document.getElementById('export-html-btn').addEventListener('click', async () => {
+      if (!currentJobId) return;
+      const btn       = document.getElementById('export-html-btn');
+      const statusEl  = document.getElementById('export-status');
+      const prevLabel = btn.textContent;
+      btn.disabled    = true;
+      btn.textContent = 'Preparing report…';
+      statusEl.textContent = '';
+
+      try {
+        const overrides = Object.entries(reviewState).map(([id, r]) => {
+          const o = { finding_id: id, decision: r.decision };
+          if (r.verdict) o.verdict = r.verdict;
+          if (r.reason)  o.reason  = r.reason;
+          return o;
+        });
+        // POST so the overrides body reaches the server. Endpoint also
+        // accepts GET for the no-override common case.
+        const res = await fetch('/api/report/' + currentJobId + '/download.html', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ overrides }),
+        });
+        if (!res.ok) throw new Error('report failed (' + res.status + ')');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'clearanswer-audit.html';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        statusEl.textContent = 'HTML report downloaded.';
+      } catch (err) {
+        statusEl.textContent = 'Report error: ' + err.message;
       } finally {
         btn.disabled = false;
         btn.textContent = prevLabel;

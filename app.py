@@ -76,6 +76,7 @@ def _add_cors_headers(response):
 @app.route("/api/export", methods=["OPTIONS"])
 @app.route("/api/export/<job_id>", methods=["OPTIONS"])
 @app.route("/api/export/download/<job_id>", methods=["OPTIONS"])
+@app.route("/api/report/<job_id>/download.html", methods=["OPTIONS"])
 def _cors_preflight(job_id: str | None = None):
     return ("", 204)
 
@@ -228,6 +229,49 @@ def download_export(job_id: str):
         return jsonify({"error": "no export for that job_id; call POST /api/export first"}), 404
     return send_from_directory(
         OUTPUTS_DIR, name, as_attachment=True, download_name="audit.json"
+    )
+
+
+@app.route("/api/report/<job_id>/download.html", methods=["GET", "POST"])
+def download_html_report(job_id: str):
+    """Render the completed audit as a self-contained HTML file.
+
+    No API dependency: the response is a static page with inline CSS. A
+    reviewer can save it, email it, or print it and still see every finding
+    with evidence, impact analysis, and reviewer decisions.
+
+    Applies the same submission-shape mapping as /api/export so the report
+    reflects what judges will see (severity/confidence policy + reviewer
+    overrides, _trace stripped).
+    """
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+    if not job:
+        return jsonify({"error": "unknown job_id"}), 404
+    if job["state"] == "error":
+        return jsonify({"error": job["error"] or "audit failed"}), 500
+    if job["state"] != "done" or not job["result"]:
+        return jsonify({"state": job["state"], "message": "still processing"}), 202
+
+    overrides = None
+    body = request.get_json(silent=True)
+    if isinstance(body, dict):
+        candidate = body.get("overrides")
+        if isinstance(candidate, list):
+            overrides = candidate
+
+    audit = _prepare_for_submission(job["result"], overrides=overrides)
+    from html_report import build_html_report
+
+    html_bytes = build_html_report(audit).encode("utf-8")
+    from flask import Response
+
+    return Response(
+        html_bytes,
+        mimetype="text/html",
+        headers={
+            "Content-Disposition": 'attachment; filename="clearanswer-audit.html"'
+        },
     )
 
 
