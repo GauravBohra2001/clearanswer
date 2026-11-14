@@ -532,6 +532,64 @@
     .stat-block.contradicted .stat-label { color: var(--contradicted-fg); }
     .stat-block.insufficient .stat-label { color: var(--insufficient-fg); }
 
+    .stat-block.total { background: var(--surface); border: 1px solid var(--border); }
+    .stat-block.total .stat-count,
+    .stat-block.total .stat-label { color: var(--ink); }
+
+    /* Verdict distribution: one stacked bar, widths are claim shares. */
+    .verdict-bar {
+      display: flex;
+      height: 10px;
+      border-radius: 5px;
+      overflow: hidden;
+      background: var(--tile);
+      margin: -8px 0 8px;
+    }
+    .verdict-bar span { display: block; height: 100%; }
+    .verdict-bar .seg-supported    { background: var(--supported-fg); }
+    .verdict-bar .seg-contradicted { background: var(--contradicted-fg); }
+    .verdict-bar .seg-insufficient { background: var(--insufficient-fg); }
+    .verdict-bar span + span { border-left: 2px solid var(--surface); }
+    .summary-meta {
+      font-size: 12.5px;
+      color: var(--slate);
+      margin-bottom: 20px;
+    }
+    .summary-meta strong { color: var(--ink); font-weight: 600; }
+
+    /* "Data checked" block: source, release and calculation, always visible. */
+    .data-checked {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      background: var(--surface);
+    }
+    .data-checked dl {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: 4px 14px;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+    .data-checked dt { color: var(--mute); font-weight: 600; }
+    .data-checked dd { color: var(--ink); overflow-wrap: anywhere; }
+    .data-checked code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      background: var(--tile);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 560px) {
+      .summary-stats { flex-wrap: wrap; }
+      .summary-stats .stat-block { flex: 1 1 calc(50% - 6px); }
+      .evidence-contradiction { flex-direction: column; }
+      .data-checked dl { grid-template-columns: 1fr; }
+      .data-checked dt { margin-top: 4px; }
+    }
+
     /* ── Done actions ── */
     .done-actions {
       display: flex;
@@ -1079,6 +1137,10 @@
 
       <!-- Summary stats -->
       <div class="summary-stats">
+        <div class="stat-block total">
+          <span class="stat-count" id="stat-total">0</span>
+          <span class="stat-label">Claims</span>
+        </div>
         <div class="stat-block supported">
           <span class="stat-count" id="stat-supported">0</span>
           <span class="stat-label">Supported</span>
@@ -1092,6 +1154,8 @@
           <span class="stat-label">Insufficient</span>
         </div>
       </div>
+      <div class="verdict-bar" id="verdict-bar" role="img" aria-label="Verdict distribution"></div>
+      <p class="summary-meta" id="summary-meta"></p>
 
       <div class="card">
         <div class="card-header">
@@ -1400,6 +1464,8 @@
       document.getElementById('stat-supported').textContent    = supported;
       document.getElementById('stat-contradicted').textContent = contradicted;
       document.getElementById('stat-insufficient').textContent = insufficient;
+      document.getElementById('stat-total').textContent        = claims.length;
+      renderSummaryOverview(claims, { supported, contradicted, insufficient });
 
       const list = document.getElementById('done-claim-list');
       list.innerHTML = '';
@@ -1413,6 +1479,81 @@
       });
 
       updateReviewProgress(claims.length);
+    }
+
+    // Stacked verdict bar plus one line naming the release and how many
+    // claims still need a person to confirm them.
+    function renderSummaryOverview(claims, counts) {
+      const bar = document.getElementById('verdict-bar');
+      const total = claims.length;
+      bar.innerHTML = '';
+      const segs = [
+        ['supported', counts.supported, 'supported'],
+        ['contradicted', counts.contradicted, 'contradicted'],
+        ['insufficient', counts.insufficient, 'insufficient evidence'],
+      ];
+      const label = [];
+      segs.forEach(([cls, n, name]) => {
+        if (!n || !total) return;
+        const s = document.createElement('span');
+        s.className = 'seg-' + cls;
+        s.style.width = (100 * n / total) + '%';
+        s.title = n + ' ' + name;
+        bar.appendChild(s);
+        label.push(n + ' ' + name);
+      });
+      bar.setAttribute('aria-label', 'Verdict distribution: ' + (label.join(', ') || 'no claims'));
+
+      const releases = (fullResult && fullResult.data && Array.isArray(fullResult.data.releases))
+        ? fullResult.data.releases.map(r => r.name).filter(Boolean) : [];
+      const review = claims.filter(c => c.needs_human_review).length;
+      const parts = [];
+      if (releases.length) parts.push('Checked against TCGA-BRCA release <strong>' + esc(releases.map(releaseLabel).join(', ')) + '</strong>');
+      parts.push('<strong>' + review + '</strong> of ' + total + ' flagged for human review');
+      parts.push('research use only, not a clinical finding');
+      document.getElementById('summary-meta').innerHTML = parts.join(' · ');
+    }
+
+    // "Data checked": the file, release and calculation behind a verdict,
+    // pulled from the finding's evidence pointers so it matches audit.json.
+    function releaseLabel(name) {
+      return name === 'raw' ? 'A (frozen event release)' : name;
+    }
+
+    function buildDataChecked(finding) {
+      const ev = (finding && Array.isArray(finding.evidence)) ? finding.evidence : [];
+      const files = [], calcs = [];
+      let release = null;
+      ev.forEach(e => {
+        if (e.kind === 'file') {
+          if (!files.includes(e.id)) files.push(e.id);
+          if (e.release && !release) release = e.release;
+        } else if (e.kind === 'analysis' && e.id !== 'cohort_trace') {
+          const what = String(e.id || '').replace(/^A:/, '');
+          calcs.push({ what, result: e.note || '' });
+        }
+      });
+      if (!files.length && !calcs.length) return null;
+
+      const box = document.createElement('div');
+      box.className = 'data-checked';
+      const lab = document.createElement('div');
+      lab.className = 'drill-label';
+      lab.textContent = 'Data checked';
+      box.appendChild(lab);
+      const dl = document.createElement('dl');
+      const add = (term, html) => {
+        const dt = document.createElement('dt'); dt.textContent = term;
+        const dd = document.createElement('dd'); dd.innerHTML = html;
+        dl.appendChild(dt); dl.appendChild(dd);
+      };
+      if (files.length) add('Source', files.map(f => '<code>' + esc(f) + '</code>').join(' '));
+      if (release)      add('Release', esc(releaseLabel(release)));
+      calcs.slice(0, 3).forEach((c, i) => {
+        add(i === 0 ? 'Calculation' : '', esc(c.what) + (c.result ? '<br><code>' + esc(c.result) + '</code>' : ''));
+      });
+      box.appendChild(dl);
+      return box;
     }
 
     // Render one claim row plus its drill-down panel. Keeping this in one
@@ -1695,6 +1836,10 @@
         row.appendChild(right);
         panel.appendChild(row);
       }
+
+      // 1b. Source, release and calculation, visible without expanding.
+      const checked = buildDataChecked(finding);
+      if (checked) panel.appendChild(checked);
 
       // 2. Impact analysis, promoted to the first text block so the reviewer
       // reads "what does this mean for me" before scrolling through sources.
