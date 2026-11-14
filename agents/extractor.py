@@ -83,7 +83,11 @@ class ExtractorAgent(BaseAgent):
             response = self.call_llm(
                 system=_SYSTEM,
                 messages=[{"role": "user", "content": report_text}],
-                max_tokens=1024,
+                # 1024 was enough for a one-paragraph brief but a full
+                # research paper can carry 20+ checkable sentences, and a
+                # truncated JSON array parses to zero claims. 8192 fits a
+                # long paper while staying well under Sonnet's output cap.
+                max_tokens=8192,
             )
             raw = _first_text_block(response)
             claims = _parse_claims(raw)
