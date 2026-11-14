@@ -1002,7 +1002,7 @@
       <div class="card">
         <div class="card-header">
           <h2>Extracted Claims</h2>
-          <span class="badge badge-pending" id="working-claims-badge">4 claims</span>
+          <span class="badge badge-pending" id="working-claims-badge">...</span>
         </div>
         <div class="card-divider"></div>
         <ul class="claim-list" id="working-claim-list"></ul>
@@ -1354,16 +1354,39 @@
         }
       });
 
-      const resolved = claims.filter(c => c.verdict !== 'pending').length;
-      const total    = claims.length;
-      const statusEl = document.getElementById('working-status');
+      // Claim counts: during verify the server surfaces extracted_count +
+      // verified_count via /api/status so the UI can show real progress on
+      // long papers. Fall back to the projected claims list once done.
+      const extracted = (typeof data.extracted_count === 'number')
+        ? data.extracted_count
+        : claims.length;
+      const verified  = (typeof data.verified_count === 'number')
+        ? data.verified_count
+        : claims.filter(c => c.verdict !== 'pending').length;
 
+      const badgeEl = document.getElementById('working-claims-badge');
+      if (badgeEl) {
+        if (data.state === 'extracting') {
+          badgeEl.textContent = '...';
+        } else if (extracted > 0) {
+          badgeEl.textContent = extracted + ' claim' + (extracted !== 1 ? 's' : '');
+        } else {
+          badgeEl.textContent = '0 claims';
+        }
+      }
+
+      const statusEl = document.getElementById('working-status');
       if (data.state === 'extracting') {
         statusEl.textContent = 'Extracting claims\u2026';
       } else if (data.state === 'verifying') {
-        statusEl.textContent = 'Verified ' + resolved + ' of ' + total + ' claim' + (total !== 1 ? 's' : '') + '\u2026';
+        if (extracted > 0) {
+          statusEl.textContent = 'Verifying ' + verified + ' of ' + extracted
+            + ' claim' + (extracted !== 1 ? 's' : '') + '\u2026';
+        } else {
+          statusEl.textContent = 'Verifying claims\u2026';
+        }
       } else {
-        statusEl.textContent = 'All ' + total + ' claims verified.';
+        statusEl.textContent = 'All ' + extracted + ' claims verified.';
       }
     }
 

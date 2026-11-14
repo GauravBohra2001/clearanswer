@@ -7,6 +7,7 @@ exactly one line here.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Callable, Optional
 
 from agents.extractor import ExtractorAgent
 from agents.verifier import VerifierAgent
@@ -25,7 +26,18 @@ class OrchestratorAgent:
         self.trace = TraceCollector()
         self.team = team
 
-    def run(self, report_path: str | Path, data_dir: str | Path) -> dict:
+    def run(
+        self,
+        report_path: str | Path,
+        data_dir: str | Path,
+        on_claims_extracted: Optional[Callable[[list[str]], None]] = None,
+        on_claim_verified: Optional[Callable[[int, int, ClaimResult], None]] = None,
+    ) -> dict:
+        """Run the full pipeline.
+
+        Optional callbacks surface progress to the host (e.g. Flask job state)
+        so a web UI can show "verifying 3 of 16" instead of a blank spinner.
+        """
         report_path = Path(report_path)
         report_text = report_path.read_text(encoding="utf-8")
         release = TCGARelease(data_dir)
@@ -45,14 +57,25 @@ class OrchestratorAgent:
 
         extractor = ExtractorAgent(trace_collector=self.trace)
         claims = extractor.run(report_text)
+        if on_claims_extracted is not None:
+            try:
+                on_claims_extracted(claims)
+            except Exception:
+                # Callback failures must never fail the audit itself.
+                pass
 
         results: list[ClaimResult] = []
-        for claim_text in claims:
+        for i, claim_text in enumerate(claims, start=1):
             verifier = VerifierAgent(release=release, trace_collector=self.trace)
             result = verifier.run(claim_text)
             # Post-guard: tighten needs_human_review and limitation for weak verdicts.
             post_check(result)
             results.append(result)
+            if on_claim_verified is not None:
+                try:
+                    on_claim_verified(i, len(claims), result)
+                except Exception:
+                    pass
 
         audit = build_audit_json(
             report_text=report_text,

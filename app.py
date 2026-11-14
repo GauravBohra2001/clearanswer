@@ -157,6 +157,13 @@ def get_status(job_id: str):
             "state": job["state"],
             "claims": _project_claims(job),
         }
+        # Progress during verify: the orchestrator reports the extracted
+        # claim list and a running verified counter via callbacks, so the
+        # UI can show "verifying 3 of 16" instead of "0 of 0".
+        if job.get("extracted_count") is not None:
+            payload["extracted_count"] = job["extracted_count"]
+        if job.get("verified_count") is not None:
+            payload["verified_count"] = job["verified_count"]
         if job["error"]:
             payload["error"] = job["error"]
         return jsonify(payload)
@@ -280,6 +287,22 @@ def download_html_report(job_id: str):
 def _run_audit_job(job_id: str, report_path: Path, data_dir: str, team: str) -> None:
     """Runs the orchestrator pipeline and records the outcome on the job dict."""
     _set_state(job_id, "extracting")
+
+    # Progress callbacks let the status endpoint show real counts during the
+    # long verify loop. The orchestrator invokes these inside its own try;
+    # callback exceptions never fail the audit.
+    def _on_claims(claims: list[str]) -> None:
+        with _jobs_lock:
+            if job_id in _jobs:
+                _jobs[job_id]["extracted_count"] = len(claims)
+                _jobs[job_id]["verified_count"] = 0
+
+    def _on_claim_verified(i: int, total: int, _result) -> None:
+        with _jobs_lock:
+            if job_id in _jobs:
+                _jobs[job_id]["verified_count"] = i
+                _jobs[job_id]["extracted_count"] = total
+
     try:
         orchestrator = OrchestratorAgent(team=team)
         # The orchestrator does extract and verify in one call; once the
@@ -287,7 +310,12 @@ def _run_audit_job(job_id: str, report_path: Path, data_dir: str, team: str) -> 
         # state marker to 'verifying' here so a UI polling at ~1Hz sees the
         # transition even though there is no streaming hook today.
         _set_state(job_id, "verifying")
-        audit = orchestrator.run(report_path=str(report_path), data_dir=data_dir)
+        audit = orchestrator.run(
+            report_path=str(report_path),
+            data_dir=data_dir,
+            on_claims_extracted=_on_claims,
+            on_claim_verified=_on_claim_verified,
+        )
         with _jobs_lock:
             _jobs[job_id]["result"] = audit
             _jobs[job_id]["claims"] = audit.get("findings", [])
