@@ -339,11 +339,13 @@ def _extract_report_text(req) -> str:
 
 
 def _extract_pdf_text(data: bytes, filename: str = "upload.pdf") -> str:
-    """Extract selectable text from a PDF, page by page.
+    """Extract selectable text from a PDF, honoring two-column layouts.
 
-    Returns the concatenation of every page's text, joined by blank lines.
-    Raises ValueError with a clear message for a scanned (image-only) PDF
-    or when pdfplumber is not installed.
+    Each page is split into a left and right half via page.crop(); if both
+    halves carry substantial text the two halves are concatenated in reading
+    order (left, then right). Single-column pages fall back to full-page
+    extraction so they are not duplicated. All calls use x_tolerance=2 so
+    tight academic typography keeps its word spacing.
     """
     try:
         import pdfplumber  # type: ignore
@@ -358,7 +360,14 @@ def _extract_pdf_text(data: bytes, filename: str = "upload.pdf") -> str:
     pages: list[str] = []
     with pdfplumber.open(io.BytesIO(data)) as pdf:
         for page in pdf.pages:
-            txt = page.extract_text() or ""
+            mid = page.width / 2
+            left = (page.crop((0, 0, mid, page.height))
+                    .extract_text(x_tolerance=2) or "").strip()
+            right = (page.crop((mid, 0, page.width, page.height))
+                     .extract_text(x_tolerance=2) or "").strip()
+            two_col = len(left) > 40 and len(right) > 40
+            txt = f"{left}\n\n{right}" if two_col else (
+                page.extract_text(x_tolerance=2) or "").strip()
             if txt.strip():
                 pages.append(txt.strip())
     if not pages:
