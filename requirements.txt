@@ -1,0 +1,5 @@
+anthropic
+pandas
+streamlit
+python-dotenv
+jsonschema
