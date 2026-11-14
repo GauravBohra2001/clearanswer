@@ -918,10 +918,10 @@
           tabindex="0"
           aria-label="Drop file or click to browse"
         >
-          <div class="drop-zone-primary" id="drop-label-primary">Drop a .txt or .md file here</div>
+          <div class="drop-zone-primary" id="drop-label-primary">Drop a .txt, .md, or .pdf file here</div>
           <div class="drop-zone-secondary" id="drop-label-secondary">or click to browse</div>
           <div class="drop-zone-filename" id="drop-label-filename" style="display:none;"></div>
-          <input type="file" id="file-input" accept=".txt,.md" />
+          <input type="file" id="file-input" accept=".txt,.md,.pdf,application/pdf" />
         </div>
 
         <div class="input-gap"></div>
@@ -1173,9 +1173,12 @@
     const dropLabelF = document.getElementById('drop-label-filename');
 
     let droppedFileText = '';
+    // When a .pdf is dropped we keep the File object; submit uses multipart
+    // so the server can extract text server-side with pdfplumber.
+    let droppedPdfFile = null;
 
     function checkReady() {
-      auditBtn.disabled = !(textarea.value.trim().length > 0 || droppedFileText.length > 0);
+      auditBtn.disabled = !(textarea.value.trim().length > 0 || droppedFileText.length > 0 || droppedPdfFile !== null);
     }
 
     textarea.addEventListener('input', checkReady);
@@ -1196,30 +1199,53 @@
     fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
 
     function loadFile(file) {
-      const reader = new FileReader();
-      reader.onload = ev => {
-        droppedFileText = ev.target.result;
+      const name = (file.name || '').toLowerCase();
+      const showLoaded = () => {
         dropLabelP.textContent   = 'File loaded';
         dropLabelS.style.display = 'none';
         dropLabelF.textContent   = file.name;
         dropLabelF.style.display = 'block';
         checkReady();
       };
+      if (name.endsWith('.pdf')) {
+        // Defer extraction to the server. We keep the File reference and
+        // flag readiness; the submit handler will upload as multipart.
+        droppedPdfFile = file;
+        droppedFileText = '';
+        showLoaded();
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = ev => {
+        droppedFileText = ev.target.result;
+        droppedPdfFile  = null;
+        showLoaded();
+      };
       reader.readAsText(file);
     }
 
     // ── Submit ───────────────────────────────────────────────────────────────
     auditBtn.addEventListener('click', async () => {
-      const text = droppedFileText || textarea.value.trim();
-      if (!text) return;
+      const hasPdf  = droppedPdfFile !== null;
+      const text    = droppedFileText || textarea.value.trim();
+      if (!hasPdf && !text) return;
       auditBtn.disabled = true;
       try {
-        const res  = await fetch('/api/audit', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ report_text: text }),
-        });
+        let res;
+        if (hasPdf) {
+          // Multipart upload: the server routes .pdf to pdfplumber.
+          const fd = new FormData();
+          fd.append('file', droppedPdfFile, droppedPdfFile.name);
+          res = await fetch('/api/audit', { method: 'POST', body: fd });
+        } else {
+          res = await fetch('/api/audit', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ report_text: text }),
+          });
+        }
         const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'audit failed (' + res.status + ')');
         currentJobId = data.job_id;
         startWorking();
       } catch (err) {
@@ -1965,11 +1991,12 @@
       fullResult       = null;
       lastVerdicts     = {};
       reviewState      = {};
+      droppedPdfFile   = null;
       droppedFileText  = '';
       textarea.value   = '';
       fileInput.value  = '';
 
-      dropLabelP.textContent   = 'Drop a .txt or .md file here';
+      dropLabelP.textContent   = 'Drop a .txt, .md, or .pdf file here';
       dropLabelS.style.display = 'block';
       dropLabelS.textContent   = 'or click to browse';
       dropLabelF.style.display = 'none';

@@ -308,18 +308,27 @@ def _set_state(job_id: str, state: str) -> None:
 # ------------------------------------------------------- helpers and parsers
 
 def _extract_report_text(req) -> str:
-    """Pull report text out of a JSON body, a form field, or an uploaded file."""
+    """Pull report text out of a JSON body, a form field, or an uploaded file.
+
+    .pdf uploads are extracted via pdfplumber so a reviewer can drop a real
+    paper in. .txt / .md decode as UTF-8 directly. Any other binary upload is
+    best-effort decoded and left to the extractor to handle.
+    """
     # 1) JSON body: {"report_text": "..."}
     if req.is_json:
         payload = req.get_json(silent=True) or {}
         text = payload.get("report_text") or payload.get("report")
         if text:
             return str(text)
-    # 2) Multipart file upload: field name 'file' (or 'report')
+    # 2) Multipart file upload: field name 'file' (or 'report' / 'report_file').
     for key in ("file", "report", "report_file"):
         f = req.files.get(key)
         if f and f.filename:
-            return f.read().decode("utf-8", errors="replace")
+            name = (f.filename or "").lower()
+            data = f.read()
+            if name.endswith(".pdf"):
+                return _extract_pdf_text(data, filename=f.filename)
+            return data.decode("utf-8", errors="replace")
     # 3) Plain form field fallback.
     text = req.values.get("report_text") or req.values.get("report")
     if text:
@@ -327,6 +336,37 @@ def _extract_report_text(req) -> str:
     raise ValueError(
         "no report text provided (send JSON {report_text: ...} or a multipart file)"
     )
+
+
+def _extract_pdf_text(data: bytes, filename: str = "upload.pdf") -> str:
+    """Extract selectable text from a PDF, page by page.
+
+    Returns the concatenation of every page's text, joined by blank lines.
+    Raises ValueError with a clear message for a scanned (image-only) PDF
+    or when pdfplumber is not installed.
+    """
+    try:
+        import pdfplumber  # type: ignore
+    except ImportError as e:
+        raise ValueError(
+            "PDF support needs the pdfplumber package. "
+            "Run `pip install -r requirements.txt` and restart the server."
+        ) from e
+
+    import io
+
+    pages: list[str] = []
+    with pdfplumber.open(io.BytesIO(data)) as pdf:
+        for page in pdf.pages:
+            txt = page.extract_text() or ""
+            if txt.strip():
+                pages.append(txt.strip())
+    if not pages:
+        raise ValueError(
+            f"No extractable text in {filename}. It may be a scanned or "
+            "image-only PDF; rerun OCR and upload the resulting text."
+        )
+    return "\n\n".join(pages)
 
 
 def _prepare_for_submission(audit: dict, overrides: list[dict] | None = None) -> dict:
