@@ -248,7 +248,7 @@ def _run_audit_job(job_id: str, report_path: Path, data_dir: str, team: str) -> 
             _jobs[job_id]["result"] = audit
             _jobs[job_id]["claims"] = audit.get("findings", [])
             _jobs[job_id]["state"] = "done"
-    except Exception as e:  # noqa: BLE001 — surfaced to the client
+    except Exception as e:  # noqa: BLE001 - surfaced to the client
         tb = traceback.format_exc(limit=5)
         with _jobs_lock:
             _jobs[job_id]["state"] = "error"

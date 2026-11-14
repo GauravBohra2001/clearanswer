@@ -1,4 +1,4 @@
-# ClearAnswer — Research Claim Auditor
+# ClearAnswer - Research Claim Auditor
 
 **Track:** Evidence Navigator (Track 2)
 **Team:** clearanswer (Gaurav Bohra)
@@ -6,7 +6,7 @@
 
 ## What it does
 
-Upload a research report. An AI agent extracts factual claims, verifies each against the frozen TCGA-BRCA dataset, and builds an audit queue: **supported**, **contradicted**, or **insufficient evidence** — each with the calculation and source evidence behind it. A reviewer confirms each verdict. Export `audit.json` in the shared format for the organizers' checker.
+Upload a research report. An AI agent extracts factual claims, verifies each against the frozen TCGA-BRCA dataset, and builds an audit queue: **supported**, **contradicted**, or **insufficient evidence** - each with the calculation and source evidence behind it. A reviewer confirms each verdict. Export `audit.json` in the shared format for the organizers' checker.
 
 **User:** A reviewer handed a report and asked "can we trust this?"
 
@@ -14,7 +14,7 @@ Upload a research report. An AI agent extracts factual claims, verifies each aga
 
 ## How it works
 
-ClearAnswer uses an LLM (Claude) to extract claims from natural language, then verifies each claim deterministically: the agent plans a pandas query, executes it against the real TCGA-BRCA files, and the math decides the verdict. The LLM never decides the verdict — it only extracts and plans.
+ClearAnswer uses an LLM (Claude) to extract claims from natural language, then verifies each claim deterministically: the agent plans a pandas query, executes it against the real TCGA-BRCA files, and the math decides the verdict. The LLM never decides the verdict - it only extracts and plans.
 
 Architecture follows Anthropic's "Building Effective Agents" Orchestrator-Workers pattern.
 
@@ -50,11 +50,11 @@ After the audit completes, click **Export audit.json**. The file passes `validat
 
 ## Third-party code
 
-- anthropic (MIT) — Claude API SDK
-- pandas (BSD-3-Clause) — data analysis
-- Flask (BSD-3-Clause) — web server
-- jsonschema (MIT) — shared-format validation
-- cryptography (Apache-2.0) — opens sealed envelopes
+- anthropic (MIT) - Claude API SDK
+- pandas (BSD-3-Clause) - data analysis
+- Flask (BSD-3-Clause) - web server
+- jsonschema (MIT) - shared-format validation
+- cryptography (Apache-2.0) - opens sealed envelopes
 
 ## Demo video
 

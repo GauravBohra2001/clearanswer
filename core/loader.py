@@ -49,7 +49,7 @@ class TCGARelease:
             raise FileNotFoundError(f"release directory not found: {self.release_dir}")
         # Manifests sit one level up (data/tcga-brca/) for the raw release.
         # For envelope releases (envelopes/opened/<n>/release/), the manifests
-        # are the same TCGA-wide tables — look them up in data/tcga-brca/.
+        # are the same TCGA-wide tables - look them up in data/tcga-brca/.
         self.manifest_dir = self._find_manifest_dir()
         self._cache: dict[str, pd.DataFrame] = {}
 
@@ -67,7 +67,7 @@ class TCGARelease:
         for c in candidates:
             if (c / "sample_manifest.csv").exists():
                 return c
-        # Fall back to release_dir.parent even if missing — callers that need
+        # Fall back to release_dir.parent even if missing - callers that need
         # manifests will get a clear FileNotFoundError.
         return self.release_dir.parent
 
@@ -190,7 +190,7 @@ class TCGARelease:
         """Column names, dtypes, non-null counts and sample values for a layer."""
         df = self.load_layer(layer_name)
         info = {"layer": layer_name, "n_rows": int(len(df)), "n_cols": int(len(df.columns)), "columns": []}
-        # For molecular matrices, "columns" are sample barcodes — surface a few.
+        # For molecular matrices, "columns" are sample barcodes - surface a few.
         for col in df.columns[:200]:
             series = df[col]
             info["columns"].append({

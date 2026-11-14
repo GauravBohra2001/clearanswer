@@ -2,7 +2,7 @@
 
 The agent decides *what* to compute (count ER-positive primary tumors,
 describe the ERALPHA RPPA column, etc.); this tool decides *how* to compute it
-deterministically with pandas. "Ground truth from the environment" — the LLM
+deterministically with pandas. "Ground truth from the environment" - the LLM
 never produces a number, it asks this tool for one.
 
 Supported operations
@@ -37,7 +37,7 @@ class DataTool:
     description = (
         "Run a deterministic pandas query against a loaded TCGA-BRCA data layer "
         "and return the exact numbers. Use this whenever you need a count, a "
-        "mean, a value_counts distribution, or a comparison between groups — "
+        "mean, a value_counts distribution, or a comparison between groups - "
         "do not estimate numbers from memory.\n\n"
         f"Layers available: {_LAYER_NAMES}.\n"
         "- 'sample_manifest' / 'slide_manifest' are the small TCGA-wide tables.\n"
@@ -56,7 +56,7 @@ class DataTool:
         "- describe: {operation: 'describe', layer, column}\n"
         "- compare: {operation: 'compare', layer, column, group_by, agg:'mean|median'}\n"
         "- unique: {operation: 'unique', layer, column, limit?: int}\n\n"
-        "Example — PAM50 subtype distribution of primary tumors:\n"
+        "Example - PAM50 subtype distribution of primary tumors:\n"
         "  {operation: 'value_counts', layer: 'clinical', column: 'PAM50Call_RNAseq', "
         "primary_only: true}\n"
     )
@@ -121,7 +121,7 @@ class DataTool:
                 "query_description": _describe(query),
                 **result,
             }
-        except Exception as e:  # noqa: BLE001 — surfaced to the agent
+        except Exception as e:  # noqa: BLE001 - surfaced to the agent
             return self._err(f"{type(e).__name__}: {e}", query)
 
     # --------------------------------------------------------------- selectors

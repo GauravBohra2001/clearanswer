@@ -1,7 +1,7 @@
 """Schema-introspection tool.
 
 Before an agent can run data_query, it needs to know which columns exist and
-what they contain. SchemaTool exposes that in small, cheap calls — no row
+what they contain. SchemaTool exposes that in small, cheap calls - no row
 scans, just column metadata.
 
 search_columns is the key action for the Claim Auditor: when a claim mentions
@@ -27,13 +27,13 @@ class SchemaTool:
         "(e.g. 'hormone therapy response') is captured by the data.\n\n"
         f"Layers: {_LAYER_NAMES}.\n\n"
         "Actions:\n"
-        "- list_layers: no args — list available layers and manifests.\n"
-        "- columns:        {action:'columns', layer}  — column names only.\n"
-        "- dtypes:         {action:'dtypes', layer}   — column name + dtype.\n"
+        "- list_layers: no args - list available layers and manifests.\n"
+        "- columns:        {action:'columns', layer}  - column names only.\n"
+        "- dtypes:         {action:'dtypes', layer}   - column name + dtype.\n"
         "- sample_values:  {action:'sample_values', layer, column, n?:5}\n"
         "- unique_values:  {action:'unique_values', layer, column, limit?:50}\n"
         "- describe_column:{action:'describe_column', layer, column}\n"
-        "- search_columns: {action:'search_columns', layer?, query} — "
+        "- search_columns: {action:'search_columns', layer?, query} - "
         "substring search across column names in one or every layer.\n"
     )
 

@@ -16,7 +16,7 @@ class ManifestTool:
     description = (
         "Quick lookups against sample_manifest.csv and slide_manifest.csv. Use "
         "for cohort-level counts (how many primary tumors? how many have all "
-        "five data layers?) and per-sample layer-availability checks — it "
+        "five data layers?) and per-sample layer-availability checks - it "
         "avoids loading the molecular files.\n\n"
         "Actions:\n"
         "- count_samples: {action:'count_samples', sample_type?:'Primary Tumor'}\n"
@@ -25,7 +25,7 @@ class ManifestTool:
         "sample_type?:'Primary Tumor'}\n"
         "- sample_info: {action:'sample_info', sample_id:'TCGA-...-01'}\n"
         "- layer_availability: {action:'layer_availability', "
-        "sample_type?:'Primary Tumor'} — percent of samples with each layer.\n"
+        "sample_type?:'Primary Tumor'} - percent of samples with each layer.\n"
         "- has_all_layers: {action:'has_all_layers', sample_id:'TCGA-...-01'}\n"
     )
 

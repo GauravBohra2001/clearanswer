@@ -1,1 +1,1 @@
-# Research Claim Auditor — core package (data, evidence contracts, tracing, guardrails).
+# Research Claim Auditor - core package (data, evidence contracts, tracing, guardrails).

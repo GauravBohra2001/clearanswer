@@ -27,7 +27,7 @@ def main() -> int:
     orchestrator = OrchestratorAgent(team=args.team)
     try:
         audit = orchestrator.run(report_path=args.report, data_dir=args.data_dir)
-    except Exception as e:  # noqa: BLE001 — surfaced to the judge's terminal
+    except Exception as e:  # noqa: BLE001 - surfaced to the judge's terminal
         print(f"ERROR: {type(e).__name__}: {e}", file=sys.stderr)
         return 1
 

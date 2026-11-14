@@ -1,7 +1,7 @@
 """Trace recording for agent runs.
 
-Every step an agent takes — plan, query, execute, interpret, reflect, extract,
-guard — becomes a TraceEntry. The TraceCollector owns the ordered list and can
+Every step an agent takes - plan, query, execute, interpret, reflect, extract,
+guard - becomes a TraceEntry. The TraceCollector owns the ordered list and can
 serialize it to JSON (for audit.json evidence) or Markdown (for the live demo).
 
 A step is the atomic unit of agent work. Use the start_step context manager so

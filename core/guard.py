@@ -1,4 +1,4 @@
-"""Guardrails — regex-based, fast, explainable.
+"""Guardrails - regex-based, fast, explainable.
 
 Runs before verification (pre_check on the raw claim text) and after
 verification (post_check on the ClaimResult) to enforce the hackathon's

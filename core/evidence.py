@@ -4,7 +4,7 @@ Think of ClaimResult as a compile-time check: a verdict cannot be constructed
 without the proof the shared format requires. If a verdict says "contradicted",
 __post_init__ demands a correct_value; if it says "supported" or
 "contradicted", it demands at least one Evidence pointer. The only verdict
-that doesn't need evidence is "insufficient_evidence" — because the whole
+that doesn't need evidence is "insufficient_evidence" - because the whole
 point is that the data can't support an answer.
 
 Use the module-level constructors (supported, contradicted, insufficient)
