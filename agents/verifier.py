@@ -86,6 +86,15 @@ IMPORTANT RULES:
 - Use the "LIMITATION" field on columns to inform your limitation text.
 - When a sentence mentions treatment response, hormone therapy, drug
   efficacy, or causal relationships, the answer is ALWAYS insufficient_evidence.
+
+IMPACT ANALYSIS (fill these in finalize_verdict):
+- why_it_matters: one sentence on why THIS specific finding matters. Refer to
+  the actual numbers, columns, or distributions you found. Never generic.
+- next_step: one concrete action. Name the table/figure/section to fix, or the
+  specific column to cite. Never "no change needed" alone.
+- cannot_tell: what this audit cannot tell the reviewer about this specific
+  claim (optional). Name the specific gap - e.g. a column that exists but
+  was not used, or a newer release that might differ.
 """.replace("{schema_summary}", get_schema_summary_for_prompt())
 
 
@@ -133,6 +142,34 @@ def _finalize_tool_schema() -> dict:
                     "type": "array",
                     "items": {"type": "string"},
                     "description": "Source files that back the verdict (e.g. 'clinical.tsv').",
+                },
+                "why_it_matters": {
+                    "type": "string",
+                    "description": (
+                        "One sentence explaining why THIS specific finding matters "
+                        "for a reviewer. Be specific to the claim's actual data - "
+                        "e.g. 'A 12-point overstatement of Luminal A prevalence "
+                        "skews any subtype-stratified survival analysis built on it.' "
+                        "Never use generic language like 'the number matches'."
+                    ),
+                },
+                "next_step": {
+                    "type": "string",
+                    "description": (
+                        "One concrete action for the reviewer. Be specific - "
+                        "e.g. 'Correct 62% to 49.9% in Table 2 and re-derive the "
+                        "survival curves in Figure 4 that used this denominator.' "
+                        "Never say just 'no change needed'."
+                    ),
+                },
+                "cannot_tell": {
+                    "type": "string",
+                    "description": (
+                        "What this audit CANNOT tell the reviewer about this claim "
+                        "(optional). E.g. 'This check used the frozen TCGA-BRCA "
+                        "release; a newer GDC release may have different counts.' "
+                        "Omit if there is nothing beyond the limitation."
+                    ),
                 },
             },
         },
@@ -350,6 +387,9 @@ class VerifierAgent(BaseAgent):
         limitation = final_input.get("limitation")
         correct_value = final_input.get("correct_value") or ""
         files = list(final_input.get("evidence_files") or [])
+        why_it_matters = final_input.get("why_it_matters")
+        next_step = final_input.get("next_step")
+        cannot_tell = final_input.get("cannot_tell")
 
         evidence = self._build_evidence(tool_history, files)
 
@@ -357,7 +397,7 @@ class VerifierAgent(BaseAgent):
             if not correct_value:
                 # Contract would otherwise raise; keep an informative message.
                 correct_value = _infer_correct_value(tool_history) or "not stated by verifier"
-            return contradicted(
+            result = contradicted(
                 claim_text=claim_text,
                 correct_value=correct_value,
                 evidence=evidence,
@@ -366,12 +406,12 @@ class VerifierAgent(BaseAgent):
                 severity=severity or "high",
                 limitation=limitation,
             )
-        if verdict == "supported":
+        elif verdict == "supported":
             if not evidence:
                 # output.py always prepends a claim pointer; use a distinct
                 # analysis marker here so the two do not duplicate on screen.
                 evidence = [Evidence(kind="analysis", id="model_asserted_match")]
-            return supported(
+            result = supported(
                 claim_text=claim_text,
                 evidence=evidence,
                 reasoning=reasoning,
@@ -379,13 +419,19 @@ class VerifierAgent(BaseAgent):
                 severity=severity or "none",
                 limitation=limitation,
             )
-        return insufficient(
-            claim_text=claim_text,
-            reason=limitation or reasoning or "The data does not record what the claim requires.",
-            confidence=confidence,
-            severity=severity or "none",
-            evidence=evidence,
-        )
+        else:
+            result = insufficient(
+                claim_text=claim_text,
+                reason=limitation or reasoning or "The data does not record what the claim requires.",
+                confidence=confidence,
+                severity=severity or "none",
+                evidence=evidence,
+            )
+
+        result.why_it_matters = why_it_matters
+        result.next_step = next_step
+        result.cannot_tell = cannot_tell
+        return result
 
     def _build_evidence(
         self,

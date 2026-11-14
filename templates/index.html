@@ -795,6 +795,66 @@
       margin-right: 6px;
     }
 
+    /* Impact section: prominent, verdict-tinted so a reviewer sees the
+       "so what?" before scrolling into raw evidence. The left border accent
+       gives it an at-a-glance verdict color even when the panel is scanned. */
+    .impact-section {
+      margin-top: 10px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border-left: 4px solid var(--mute);
+      background: var(--tile);
+    }
+    .impact-section.verdict-supported {
+      background: var(--supported-bg);
+      border-left-color: var(--supported-fg);
+    }
+    .impact-section.verdict-contradicted {
+      background: var(--contradicted-bg);
+      border-left-color: var(--contradicted-fg);
+    }
+    .impact-section.verdict-insufficient_evidence {
+      background: var(--insufficient-bg);
+      border-left-color: var(--insufficient-fg);
+    }
+    .impact-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--slate);
+      margin-bottom: 8px;
+    }
+    .impact-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+      font-size: 13.5px;
+      color: var(--ink);
+      line-height: 1.55;
+    }
+    .impact-row:first-of-type { margin-top: 0; }
+    .impact-symbol {
+      flex-shrink: 0;
+      font-weight: 700;
+      font-size: 15px;
+      line-height: 1.45;
+      width: 16px;
+      text-align: center;
+    }
+    .impact-row .impact-label-inline {
+      font-weight: 700;
+      margin-right: 4px;
+    }
+    .impact-section.verdict-supported .impact-symbol { color: var(--supported-fg); }
+    .impact-section.verdict-contradicted .impact-symbol { color: var(--contradicted-fg); }
+    .impact-section.verdict-insufficient_evidence .impact-symbol { color: var(--insufficient-fg); }
+    .impact-section .impact-symbol { color: var(--primary); }  /* fallback */
+
+    /* Sources toggle - shares the reasoning-toggle visual so collapsed detail
+       sections read as one family. */
+    .sources-toggle { /* alias of .reasoning-toggle */ }
+
     /* Expand the max-height cap so the enriched evidence panel does not get clipped. */
     .evidence-wrap.open { max-height: 1500px; }
   </style>
@@ -1609,29 +1669,39 @@
         panel.appendChild(row);
       }
 
-      // 2. Sources section from finding.evidence[]. Shown only when present.
-      const sources = (finding && Array.isArray(finding.evidence)) ? finding.evidence : [];
-      if (sources.length) {
+      // 2. Impact analysis, promoted to the first text block so the reviewer
+      // reads "what does this mean for me" before scrolling through sources.
+      // Rendered as a tinted callout keyed to the verdict so the visual
+      // weight lines up with the badge above.
+      const whyItMatters = finding && finding.why_it_matters;
+      const nextStep = finding && finding.next_step;
+      const cannotTell = finding && finding.cannot_tell;
+      if (whyItMatters || nextStep || cannotTell) {
         const sec = document.createElement('div');
-        sec.className = 'drill-section';
+        sec.className = 'impact-section verdict-' + (claim.verdict || 'unknown');
         const lab = document.createElement('div');
-        lab.className = 'drill-label';
-        lab.textContent = 'Sources';
+        lab.className = 'impact-label';
+        lab.textContent = 'Impact';
         sec.appendChild(lab);
-        const tree = document.createElement('div');
-        tree.className = 'drill-tree';
-        tree.textContent = sources.map((ev, i) => {
-          const isLast = i === sources.length - 1;
-          const prefix = isLast ? '\u2514\u2500 ' : '\u251c\u2500 ';
-          const parts = [];
-          if (ev.file)    parts.push(ev.file);
-          else if (ev.id) parts.push(ev.id);
-          if (ev.kind)    parts.push('(' + ev.kind + ')');
-          if (ev.note)    parts.push('\u2192 ' + ev.note);
-          if (ev.release) parts.push('release: ' + ev.release);
-          return prefix + parts.join(' ');
-        }).join('\n');
-        sec.appendChild(tree);
+
+        const appendRow = (symbol, label, body) => {
+          const row = document.createElement('div');
+          row.className = 'impact-row';
+          const sym = document.createElement('div');
+          sym.className = 'impact-symbol';
+          sym.textContent = symbol;
+          const text = document.createElement('div');
+          text.innerHTML = '<span class="impact-label-inline">' + esc(label) + ':</span> ' + esc(body);
+          row.appendChild(sym);
+          row.appendChild(text);
+          sec.appendChild(row);
+        };
+
+        // Bold colored dot carries verdict tint; arrow signals an action;
+        // circled slash reads as "cannot".
+        if (whyItMatters) appendRow('\u25cf', 'Why it matters', whyItMatters);
+        if (nextStep)     appendRow('\u2192', 'Next step', nextStep);
+        if (cannotTell)   appendRow('\u2298', "What we can't tell you", cannotTell);
         panel.appendChild(sec);
       }
 
@@ -1653,7 +1723,46 @@
         panel.appendChild(sec);
       }
 
-      // 4. Agent reasoning, filtered to steps that mention this claim's text.
+      // 4. Sources: collapsed by default. Reviewers who want to trace back
+      // to files expand it on demand; otherwise it stays out of the way.
+      const sources = (finding && Array.isArray(finding.evidence)) ? finding.evidence : [];
+      if (sources.length) {
+        const sToggle = document.createElement('button');
+        sToggle.type = 'button';
+        sToggle.className = 'reasoning-toggle';
+        const srcLabel = (open) => (open ? '\u25be Hide' : '\u25b8 Show')
+          + ' sources (' + sources.length + ' pointer' + (sources.length !== 1 ? 's' : '') + ')';
+        sToggle.textContent = srcLabel(false);
+
+        const sPanel = document.createElement('div');
+        sPanel.className = 'reasoning-panel';
+        const tree = document.createElement('div');
+        tree.className = 'drill-tree';
+        tree.textContent = sources.map((ev, i) => {
+          const isLast = i === sources.length - 1;
+          const prefix = isLast ? '\u2514\u2500 ' : '\u251c\u2500 ';
+          const parts = [];
+          if (ev.file)    parts.push(ev.file);
+          else if (ev.id) parts.push(ev.id);
+          if (ev.kind)    parts.push('(' + ev.kind + ')');
+          if (ev.note)    parts.push('\u2192 ' + ev.note);
+          if (ev.release) parts.push('release: ' + ev.release);
+          return prefix + parts.join(' ');
+        }).join('\n');
+        sPanel.appendChild(tree);
+
+        sToggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const open = sPanel.classList.toggle('open');
+          sToggle.textContent = srcLabel(open);
+        });
+
+        panel.appendChild(sToggle);
+        panel.appendChild(sPanel);
+      }
+
+      // 5. Agent reasoning, filtered to steps that mention this claim's text.
+      // Collapsed by default - supporting detail, not primary signal.
       const steps = filterTraceForClaim(claim.claim_text);
       if (steps.length) {
         const toggle = document.createElement('button');

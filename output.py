@@ -120,9 +120,13 @@ def claim_result_to_finding(
         finding["limitation"] = limitation
 
     # Optional reviewer-facing fields. Allowed by the shared format
-    # (additionalProperties is not forbidden on a finding).
-    finding["why_it_matters"] = _why_it_matters(result)
-    finding["next_step"] = _next_step(result, release_name)
+    # (additionalProperties is not forbidden on a finding). Prefer the
+    # verifier's claim-specific text; fall back to generic phrasing only when
+    # the LLM did not supply one (e.g. the cannot_answer short-circuit path).
+    finding["why_it_matters"] = result.why_it_matters or _why_it_matters(result)
+    finding["next_step"] = result.next_step or _next_step(result, release_name)
+    if result.cannot_tell:
+        finding["cannot_tell"] = result.cannot_tell
     return finding
 
 
