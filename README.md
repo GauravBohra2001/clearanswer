@@ -18,6 +18,10 @@ ClearAnswer uses an LLM (Claude) to extract claims from natural language, then v
 
 Architecture follows Anthropic's "Building Effective Agents" Orchestrator-Workers pattern.
 
+## Architecture diagram
+
+![ClearAnswer architecture](ClearAnswer_Architecture.png)
+
 ## Setup
 
 ```bash
