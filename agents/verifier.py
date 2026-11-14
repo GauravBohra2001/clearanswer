@@ -28,24 +28,44 @@ _MAX_STEPS = 10  # upper bound on tool calls per claim so a stuck agent cannot h
 
 _SYSTEM = """You are the verifier in a research claim auditor for the TCGA-BRCA dataset.
 
-You check ONE claim at a time against real data. Reason carefully, then use tools.
-Do not guess numbers from memory; every number in your verdict must come from a tool result.
+You check ONE sentence at a time against real data. The sentence is the full
+claim as written in the report. Reason carefully, then use tools. Do not
+guess numbers from memory; every number in your verdict must come from a tool
+result.
 
 Loop:
-1. PLAN what the claim asserts and which data layer it lives in.
+1. PLAN what each checkable number or comparison in the sentence asserts and
+   which data layer it lives in.
 2. QUERY the data using the tools below.
-3. INTERPRET the tool result against the claim.
-4. REFLECT: did you filter correctly (primary tumors only when relevant), did you
-   use the right column, is the claim talking about a different denominator?
+3. INTERPRET each tool result against the matching sub-claim.
+4. REFLECT: did you filter correctly (primary tumors only when relevant), did
+   you use the right column, is the sentence talking about a different
+   denominator?
 5. When you are confident, call the finalize tool EXACTLY ONCE with your verdict.
 
+COMPOUND SENTENCES (worst-part-wins rule):
+A sentence can carry several numbers ("Of the 1,101 primary tumors in the
+release, 535 have survival, mutation, copy number, RNA and protein data").
+Check EVERY number in the sentence. The sentence gets ONE verdict:
+- supported: every sub-claim matched the data within reasonable rounding.
+- contradicted: AT LEAST ONE sub-claim disagrees. correct_value must list
+  what the data shows for the wrong sub-claim(s). If more than one is wrong,
+  list all of them, separated by '; '.
+
 Verdict rules:
-- supported: the data confirms the claim within reasonable rounding.
-- contradicted: the data disagrees. You MUST provide correct_value (what the
-  data actually shows, e.g. '49.9% (421 of 844)').
-- insufficient_evidence: the data cannot speak to the claim. Explain what
-  would be needed. Use this for claims about treatment response, prognosis,
-  or anything the TCGA-BRCA release does not record.
+- supported: every checkable part of the sentence agrees with the data.
+- contradicted: any part disagrees. You MUST provide correct_value. For
+  distributional claims ("largest subtype at 62%") include the correct share
+  AND the full distribution in correct_value, e.g.
+  '49.9% (421 of 844); full distribution: LumA 49.9%, LumB 22.7%, Basal 16.7%,
+   Her2 7.9%, Normal 2.7%'.
+- insufficient_evidence: the data cannot speak to the sentence. In the
+  limitation field name the specific columns you searched and the dataset or
+  measure that would be needed, e.g. 'clinical.tsv records
+  radiation_therapy, targeted_molecular_therapy, and
+  additional_pharmaceutical_therapy as yes/no flags but has no hormone
+  therapy records and no response measure; would require a treated cohort
+  like METABRIC or a neo-adjuvant endocrine therapy trial.'
 
 Keep reasoning concise. Prefer the manifest for cohort counts, schema_info to
 discover columns, and data_query for the actual numbers.
@@ -134,10 +154,6 @@ class VerifierAgent(BaseAgent):
         final_input: dict | None = None
         steps = 0
 
-        with self.trace_collector.start_step(self.name, "plan") as step:
-            step.input_data = {"claim": claim_text}
-            step.reasoning = "Dispatching claim to the plan-query-execute-interpret-reflect loop."
-
         while steps < _MAX_STEPS:
             steps += 1
             response = self.call_llm(
@@ -149,13 +165,19 @@ class VerifierAgent(BaseAgent):
             assistant_content = [_block_to_dict(b) for b in response.content]
             messages.append({"role": "assistant", "content": assistant_content})
 
-            # Pick up any model text as reasoning, log tool calls, then execute them.
             reasoning_text = _collect_text(response.content)
             tool_use_blocks = [b for b in response.content if getattr(b, "type", None) == "tool_use"]
 
+            # The model's thinking for this turn is one PLAN entry, not a
+            # per-tool duplication. When the model decides to fire several
+            # tools in the same turn, we record its reasoning once.
+            if reasoning_text:
+                with self.trace_collector.start_step(self.name, "plan") as step:
+                    step.input_data = {"claim": claim_text} if steps == 1 else None
+                    step.reasoning = reasoning_text
+
             if not tool_use_blocks:
-                # Model stopped without finalizing. Log and break so we fall into
-                # the fallback below instead of looping on empty responses.
+                # Model stopped without finalizing. Break so the fallback runs.
                 with self.trace_collector.start_step(self.name, "reflect") as step:
                     step.reasoning = reasoning_text or "Model returned no tool calls."
                     step.output_data = {"stop_reason": getattr(response, "stop_reason", None)}
@@ -169,9 +191,12 @@ class VerifierAgent(BaseAgent):
                 if name == "finalize_verdict":
                     final_input = tool_input
                     with self.trace_collector.start_step(self.name, "interpret") as step:
-                        step.input_data = tool_input
-                        step.reasoning = reasoning_text or "Model emitted final verdict."
-                        step.output_data = {"verdict": tool_input.get("verdict")}
+                        step.input_data = {
+                            "verdict": tool_input.get("verdict"),
+                            "correct_value": tool_input.get("correct_value"),
+                        }
+                        step.output_data = _verdict_summary(tool_input)
+                        step.reasoning = tool_input.get("reasoning") or ""
                     tool_results_block.append({
                         "type": "tool_result",
                         "tool_use_id": tu.id,
@@ -182,9 +207,13 @@ class VerifierAgent(BaseAgent):
 
                 tool = self._tools_by_name.get(name)
                 stage = "query" if name == self.schema_tool.name else "execute"
+                # No reasoning attached here on purpose: the preceding PLAN
+                # entry already carries the model's intent for this turn.
+                # Each tool step records only what makes it unique (its tool
+                # call and the result), so the trace reads as a clean audit
+                # log instead of repeating the same reasoning N times.
                 with self.trace_collector.start_step(self.name, stage) as step:
                     step.input_data = {"tool": name, "args": tool_input}
-                    step.reasoning = reasoning_text if reasoning_text else ""
                     result = tool.execute(tool_input) if tool else {
                         "ok": False, "error": f"unknown tool {name!r}",
                     }
@@ -208,7 +237,7 @@ class VerifierAgent(BaseAgent):
                 claim_text=claim_text,
                 reason="Verifier exhausted its reasoning budget without reaching a verdict.",
                 confidence="low",
-                evidence=[Evidence(kind="claim", id=claim_text[:60])],
+                evidence=[Evidence(kind="analysis", id="budget_exhausted")],
             )
             fallback.reasoning = "Verifier did not emit finalize_verdict within the step budget."
             return fallback
@@ -248,7 +277,9 @@ class VerifierAgent(BaseAgent):
             )
         if verdict == "supported":
             if not evidence:
-                evidence = [Evidence(kind="claim", id=claim_text[:60])]
+                # output.py always prepends a claim pointer; use a distinct
+                # analysis marker here so the two do not duplicate on screen.
+                evidence = [Evidence(kind="analysis", id="model_asserted_match")]
             return supported(
                 claim_text=claim_text,
                 evidence=evidence,
@@ -409,6 +440,17 @@ def _short_result(result: dict) -> str:
     if isinstance(r, (int, float, str)):
         return str(r)
     return str(result.get("row_count", ""))
+
+
+def _verdict_summary(final_input: dict) -> dict:
+    """Compact, distinct payload for the INTERPRET trace step."""
+    summary = {
+        "verdict": final_input.get("verdict"),
+        "confidence": final_input.get("confidence"),
+    }
+    if final_input.get("correct_value"):
+        summary["correct_value"] = final_input["correct_value"]
+    return summary
 
 
 def _infer_correct_value(tool_history: list[dict]) -> str:

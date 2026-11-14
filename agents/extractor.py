@@ -16,45 +16,59 @@ from core.trace import TraceCollector
 _SYSTEM = """You are the claim extractor for a research audit tool.
 
 Input: a short research summary that references the TCGA-BRCA breast cancer dataset.
-Output: a JSON array where each entry is ONE checkable factual claim. The
-downstream pipeline writes one audit finding per entry, so a sentence that
-carries two independent facts must be split into two entries.
+Output: a JSON array of FULL SENTENCES copied verbatim from the input, one
+entry per sentence that contains at least one checkable factual claim. The
+downstream pipeline writes exactly one audit finding per entry.
+
+ONE FINDING PER SENTENCE. This rule comes from the hackathon organizer and
+the matcher relies on it:
+- Copy the FULL sentence verbatim as the entry. Exact wording, exact
+  punctuation, exact casing. The matcher compares your string to the
+  sentence as written.
+- Never emit a sentence fragment.
+- Never split one sentence into multiple entries, even when it contains two
+  numbers or a total and a sub-count.
+- Never emit the same sentence twice.
+- A sentence that contains several claims still becomes ONE entry. The
+  verifier will check every sub-claim; if any part is wrong, the whole
+  sentence is marked contradicted.
 
 A checkable claim is a specific statement the data can confirm or refute:
-- counts or percentages ("1,101 primary tumors", "about 62% of primary tumors")
-- comparisons ("highest ER-alpha protein responded best")
-- data-coverage statements ("535 have survival, mutation, copy number, RNA and protein data")
+counts, percentages, comparisons, coverage statements, rankings.
 
-Do NOT include:
-- opinions, recommendations, or future work suggestions ("we recommend...")
-- methodology descriptions or framing
-- citations or headings
-- the sentence "TCGA's breast cancer cohort is one of the most widely used
-  public cancer datasets" style opener; it has no number to check.
+Skip these sentences entirely:
+- Pure opinions and recommendations where the WHOLE sentence is a suggestion
+  ("We recommend future work combine all available layers.").
+- Methodology framing and background with no measurable claim.
+- Italicised editor notes and framing like "A short fictional summary...".
+- Opener sentences with no numbers ("TCGA's breast cancer cohort is one of
+  the most widely used public cancer datasets").
 
-Rules:
-- Each entry must be a span COPIED VERBATIM from the input, keeping the exact
-  wording and casing. Do not paraphrase or add words.
-- Split a sentence into separate entries ONLY when each half can be verified
-  on its own.
-- Do NOT split a sentence where one half depends on the other for its subject.
+KEEP a sentence when its MAIN clause is a factual claim, even if a trailing
+clause interprets or speculates:
+  INPUT: "Patients whose tumors had the highest ER-alpha protein responded
+  best to hormone therapy, which suggests protein data could guide treatment
+  research."
+  OUTPUT: INCLUDE this sentence. The main clause ("responded best to hormone
+  therapy") is a checkable factual claim; the "which suggests..." tail is
+  interpretation, not a reason to drop the whole sentence. The verifier will
+  rule on the main clause.
 
-Worked example on a sentence shaped like the practice brief's first body line:
+Worked examples:
+
   INPUT: "Of the 1,101 primary tumors in the release, 535 have survival,
   mutation, copy number, RNA and protein data."
-  CORRECT OUTPUT (two entries, each a verbatim span):
-    - "1,101 primary tumors in the release"
-    - "535 have survival, mutation, copy number, RNA and protein data"
+  OUTPUT: ONE entry, the full sentence verbatim.
 
-Worked example of a sentence that must NOT split:
   INPUT: "Luminal A is the largest RNA subtype, accounting for about 62% of
   primary tumors with an RNA subtype call."
-  CORRECT OUTPUT (one entry, the whole sentence):
-    - "Luminal A is the largest RNA subtype, accounting for about 62% of
-      primary tumors with an RNA subtype call."
+  OUTPUT: ONE entry, the full sentence verbatim.
+
+  INPUT: "We recommend future work combine all available layers."
+  OUTPUT: skip; it is a recommendation, not a claim.
 
 Respond with JSON only, no prose. Shape:
-  {"claims": ["claim text 1", "claim text 2", ...]}.
+  {"claims": ["full sentence 1", "full sentence 2", ...]}.
 """
 
 

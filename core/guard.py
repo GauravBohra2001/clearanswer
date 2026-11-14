@@ -51,6 +51,29 @@ _PATTERNS: dict[str, list[re.Pattern]] = {
         re.compile(r"\b(?:FDA[- ]approved|CE[- ]marked|clinically\s+validated|production[- ]ready)\b", re.I),
         re.compile(r"\bHIPAA[- ]compliant\b", re.I),
     ],
+    # A full TCGA barcode names an individual participant. The data is
+    # de-identified but still patient-derived, so reports should talk about
+    # cohorts and distributions, not call out one person. See hackathon
+    # RULES.md: "don't attempt to re-identify anyone".
+    "individual_barcode": [
+        re.compile(r"\bTCGA-[A-Z0-9]{2}-[A-Z0-9]{4}(?:-[A-Z0-9]{2,3})?\b"),
+    ],
+    # Catch attempts to steer the auditor through the uploaded report. The
+    # extractor is instructed to copy sentences verbatim, which means a crafted
+    # sentence could try to redirect verification. Report-level flag so a
+    # reviewer can inspect before the audit goes out.
+    "prompt_injection": [
+        re.compile(r"\bignore\s+(?:all\s+)?(?:previous|prior|above)\s+instructions?\b", re.I),
+        re.compile(r"\b(?:system|assistant|user)\s*:\s*\S", re.I),
+        re.compile(r"</?\s*system\s*>", re.I),
+        re.compile(r"\bjailbreak\b|\bprompt\s+injection\b", re.I),
+    ],
+    # Impossible numeric claims that would short-circuit verification. A
+    # share can be 0 to 100 percent, so flag negatives and strictly-above-100.
+    "invalid_input": [
+        re.compile(r"-\s*\d+(?:\.\d+)?\s*%"),
+        re.compile(r"\b(?:10[1-9]|1[1-9]\d|[2-9]\d{2}|\d{4,})(?:\.\d+)?\s*%", re.I),
+    ],
 }
 
 
@@ -74,20 +97,17 @@ def pre_check(text: str) -> list[str]:
 
 
 def post_check(result: "ClaimResult") -> "ClaimResult":
-    """Attach human-review flags and limitations when the verdict is weak.
+    """Flag findings that warrant a human look.
 
-    Mutates `result` in place and returns it for chaining.
+    Sets needs_human_review on weak verdicts. We no longer stamp the limitation
+    field with an "Auto-guard:" prefix because the final finding is enriched
+    downstream (see output._build_evidence) and adding the prefix here
+    duplicates or confuses a reviewer looking at the UI.
     """
-    notes: list[str] = []
     if result.confidence == "low":
         result.needs_human_review = True
-        notes.append("low confidence")
+    # Raw verifier evidence of 1 means the model relied on a single tool call;
+    # worth a human glance even if the verdict is otherwise clean.
     if result.claim_verdict in ("supported", "contradicted") and len(result.evidence) < 2:
-        notes.append("thin evidence (fewer than 2 pointers)")
         result.needs_human_review = True
-    if result.claim_verdict == "insufficient_evidence" and not result.limitation:
-        notes.append("missing limitation description")
-    if notes:
-        prefix = "Auto-guard: " + "; ".join(notes)
-        result.limitation = prefix if not result.limitation else f"{result.limitation} | {prefix}"
     return result

@@ -1,0 +1,113 @@
+{
+  "format_version": "0.2",
+  "producer": {
+    "team": "clearanswer",
+    "product": "research-claim-auditor",
+    "track": "evidence-navigator"
+  },
+  "data": {
+    "dataset": "TCGA-BRCA",
+    "releases": [
+      {
+        "name": "raw",
+        "files": [
+          {
+            "file": "clinical.tsv",
+            "sha256": "39eb3be0fb86e6a577bd2cc01502a7fa5a271e1e1cba294e9dc644ad99580d7f",
+            "hash_of": "file"
+          },
+          {
+            "file": "survival.tsv",
+            "sha256": "6c9e18ae9c2b8bacc48cd5a60cde97e8880ae2e84e48df437a0378b17e659b73",
+            "hash_of": "file"
+          },
+          {
+            "file": "mutation_gene_level.tsv.gz",
+            "sha256": "ceaf6a01fd983cefc7fca8b52f6c65121acc87b75f4d170b9fcdc07ee16a3813",
+            "hash_of": "file"
+          },
+          {
+            "file": "copy_number_gistic.tsv.gz",
+            "sha256": "c45b1f8ea19c8dc20bd614d0863a40cccc633518d0ad05d2c7fff5f75781e980",
+            "hash_of": "file"
+          },
+          {
+            "file": "protein_rppa.tsv.gz",
+            "sha256": "7823a7a375495f7e5f114d0c7ec8773e070cb9ac409785f98045d12ab71195e6",
+            "hash_of": "file"
+          },
+          {
+            "file": "rna_hiseq.tsv.gz",
+            "sha256": "263bf67245cc4b9062676583c0ff0306f08471a26aafd5504037e1da22133746",
+            "hash_of": "file"
+          }
+        ]
+      }
+    ]
+  },
+  "question": "Check the factual claims in the report against the TCGA-BRCA release. (report: /var/folders/s3/8szxbq_97gd9h3wzx3ct9kcr0000gn/T/clearanswer_jobs/62c3930ad9d547b681dade89c481d480/report.md)",
+  "findings": [
+    {
+      "id": "F-001",
+      "kind": "claim_check",
+      "summary": "Supported: Of the 1,101 primary tumors in the release, 535 have survival, mutation, copy number, RNA and protein data.",
+      "severity": "none",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-001",
+          "note": "Of the 1,101 primary tumors in the release, 535 have survival, mutation, copy number, RNA and protein data."
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "release": "raw"
+        }
+      ],
+      "claim_text": "Of the 1,101 primary tumors in the release, 535 have survival, mutation, copy number, RNA and protein data.",
+      "claim_verdict": "supported",
+      "needs_human_review": true,
+      "limitation": "Auto-guard: thin evidence (fewer than 2 pointers)",
+      "why_it_matters": "The number in the report matches the data. A reviewer can cite this as verified against the TCGA-BRCA release.",
+      "next_step": "No change needed. Keep the sentence as written, citing the audited release (TCGA-BRCA release raw)."
+    },
+    {
+      "id": "F-002",
+      "kind": "claim_check",
+      "summary": "Contradicted: Luminal A is the largest RNA subtype, accounting for about 62% of primary tumors with an RNA subtype call. Correct value: 49.9% (421 of 844); full distribution: LumA 49.9%, LumB 22.7%, Basal 16.7%, Her2 7.9%, Normal 2.7%",
+      "severity": "high",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-002",
+          "note": "Luminal A is the largest RNA subtype, accounting for about 62% of primary tumors with an RNA subtype call."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        }
+      ],
+      "claim_text": "Luminal A is the largest RNA subtype, accounting for about 62% of primary tumors with an RNA subtype call.",
+      "claim_verdict": "contradicted",
+      "needs_human_review": false,
+      "correct_value": "49.9% (421 of 844); full distribution: LumA 49.9%, LumB 22.7%, Basal 16.7%, Her2 7.9%, Normal 2.7%",
+      "limitation": "PAM50Call_RNAseq has calls for 844 of 1,101 primary tumors; the percentage is computed over those 844 with a non-null call, which is the natural denominator for this claim.",
+      "why_it_matters": "A wrong headline figure misleads every downstream reader. Figures, tables, or conclusions built on this number inherit the error.",
+      "next_step": "Correct the number to '49.9% (421 of 844); full distribution: LumA 49.9%, LumB 22.7%, Basal 16.7%, Her2 7.9%, Normal 2.7%' before sharing. Any figure, table, or conclusion built on the original number needs the same fix."
+    }
+  ]
+}
