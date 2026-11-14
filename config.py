@@ -19,7 +19,7 @@ HACKATHON_REPO = ROOT / "oncosys-hackathon-challenge"
 DATA_DIR = HACKATHON_REPO / "data" / "tcga-brca" / "raw"
 MANIFEST_DIR = HACKATHON_REPO / "data" / "tcga-brca"
 
-MODEL = "claude-sonnet-4-20250514"
+MODEL = "claude-sonnet-4-6"
 MAX_RETRIES = 2
 CONFIDENCE_THRESHOLD = 0.7
 

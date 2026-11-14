@@ -39,9 +39,13 @@ class BaseAgent:
         messages: list[dict],
         tools: Optional[list[dict]] = None,
         max_tokens: int = 2048,
-        temperature: float = 0.0,
     ):
-        """Send a Messages API request with retry on transient failures."""
+        """Send a Messages API request with retry on transient failures.
+
+        The 2.x anthropic SDK no longer accepts temperature as a top-level kwarg,
+        so we omit it. Deterministic verification relies on the tool computations,
+        not on sampling settings.
+        """
         last_err: Optional[Exception] = None
         for attempt in range(MAX_RETRIES + 1):
             try:
@@ -50,7 +54,6 @@ class BaseAgent:
                     "system": system,
                     "messages": messages,
                     "max_tokens": max_tokens,
-                    "temperature": temperature,
                 }
                 if tools:
                     kwargs["tools"] = tools
