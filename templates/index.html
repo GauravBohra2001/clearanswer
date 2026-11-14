@@ -790,6 +790,7 @@
         <button class="btn-primary" id="export-btn">Export audit.json</button>
         <button class="btn-text"    id="new-audit-btn">New Audit</button>
       </div>
+      <p id="export-status" class="page-footer" style="min-height:1.25em"></p>
 
       <p class="page-footer">Powered by clearanswer · TCGA-BRCA dataset</p>
 
@@ -1143,20 +1144,46 @@
     }
 
     // ── Export ───────────────────────────────────────────────────────────────
-    document.getElementById('export-btn').addEventListener('click', () => {
-      if (!fullResult) return;
-      const blob = new Blob([JSON.stringify(fullResult, null, 2)], { type: 'application/json' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = 'audit.json';
-      a.click();
-      URL.revokeObjectURL(url);
+    // POST /api/export writes outputs/audit-<job>.json server-side and runs
+    // the hackathon's own validator. We surface the validator's one-line
+    // verdict next to the button and then trigger the download.
+    document.getElementById('export-btn').addEventListener('click', async () => {
+      if (!currentJobId) return;
+      const btn       = document.getElementById('export-btn');
+      const statusEl  = document.getElementById('export-status');
+      const prevLabel = btn.textContent;
+      btn.disabled    = true;
+      btn.textContent = 'Exporting…';
+      statusEl.textContent = '';
+
+      try {
+        const res = await fetch('/api/export/' + currentJobId, { method: 'POST' });
+        if (!res.ok) throw new Error('export failed (' + res.status + ')');
+        const data = await res.json();
+        const flag = data.valid ? '✓ valid' : '✗ INVALID';
+        statusEl.textContent = flag + ' · ' + (data.validator_output || '').split('\n')[0]
+          + ' · wrote ' + (data.path || 'outputs/audit.json');
+
+        // Trigger browser download from the server-written file.
+        const a = document.createElement('a');
+        a.href = data.download_url || ('/api/export/download/' + currentJobId);
+        a.download = 'audit.json';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } catch (err) {
+        statusEl.textContent = 'Export error: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = prevLabel;
+      }
     });
 
     // ── New Audit ────────────────────────────────────────────────────────────
     document.getElementById('new-audit-btn').addEventListener('click', () => {
       if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+      const es = document.getElementById('export-status');
+      if (es) es.textContent = '';
       currentJobId     = null;
       fullResult       = null;
       lastVerdicts     = {};

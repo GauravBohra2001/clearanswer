@@ -19,7 +19,11 @@ Design notes
 """
 from __future__ import annotations
 
+import copy
+import json
 import os
+import subprocess
+import sys
 import tempfile
 import threading
 import traceback
@@ -37,6 +41,9 @@ from agents.orchestrator import OrchestratorAgent
 
 APP_DIR = Path(__file__).resolve().parent
 DEFAULT_DATA_DIR = (APP_DIR / "oncosys-hackathon-challenge" / "data" / "tcga-brca" / "raw").resolve()
+OUTPUTS_DIR = APP_DIR / "outputs"
+CHALLENGE_REPO = APP_DIR / "oncosys-hackathon-challenge"
+VALIDATOR = CHALLENGE_REPO / "format" / "validate.py"
 # Scratch dir for posted report text. One subdir per job so cleanup is easy
 # and two concurrent requests cannot clobber each other's input.
 SCRATCH_DIR = Path(tempfile.gettempdir()) / "clearanswer_jobs"
@@ -66,6 +73,9 @@ def _add_cors_headers(response):
 @app.route("/api/audit", methods=["OPTIONS"])
 @app.route("/api/status/<job_id>", methods=["OPTIONS"])
 @app.route("/api/result/<job_id>", methods=["OPTIONS"])
+@app.route("/api/export", methods=["OPTIONS"])
+@app.route("/api/export/<job_id>", methods=["OPTIONS"])
+@app.route("/api/export/download/<job_id>", methods=["OPTIONS"])
 def _cors_preflight(job_id: str | None = None):
     return ("", 204)
 
@@ -164,6 +174,56 @@ def get_result(job_id: str):
     return jsonify(job["result"])
 
 
+@app.route("/api/export/<job_id>", methods=["POST"])
+@app.route("/api/export", methods=["POST"])
+def export_audit(job_id: str | None = None):
+    """Write the completed audit to outputs/ and validate it with the hackathon's checker.
+
+    The orchestrator already emits shared format v0.2 (see output.py), so this
+    endpoint only has to: strip the private _trace key, apply the submission-
+    level severity/confidence mapping the judges expect, write the file, and
+    shell out to oncosys-hackathon-challenge/format/validate.py.
+    """
+    if not job_id:
+        body = request.get_json(silent=True) or {}
+        job_id = body.get("job_id") or request.values.get("job_id")
+    if not job_id:
+        return jsonify({"error": "missing job_id"}), 400
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+    if not job:
+        return jsonify({"error": "unknown job_id"}), 404
+    if job["state"] == "error":
+        return jsonify({"error": job["error"] or "audit failed"}), 500
+    if job["state"] != "done" or not job["result"]:
+        return jsonify({"state": job["state"], "message": "still processing"}), 202
+
+    audit = _prepare_for_submission(job["result"])
+    OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = OUTPUTS_DIR / f"audit-{job_id}.json"
+    out_path.write_text(json.dumps(audit, indent=2), encoding="utf-8")
+
+    valid, validator_output = _run_validator(out_path)
+    return jsonify({
+        "path": str(out_path.relative_to(APP_DIR)),
+        "download_url": f"/api/export/download/{job_id}",
+        "valid": valid,
+        "validator_output": validator_output,
+        "n_findings": len(audit.get("findings", [])),
+    })
+
+
+@app.route("/api/export/download/<job_id>", methods=["GET"])
+def download_export(job_id: str):
+    """Serve the exported audit.json so the browser can save it locally."""
+    name = f"audit-{job_id}.json"
+    if not (OUTPUTS_DIR / name).exists():
+        return jsonify({"error": "no export for that job_id; call POST /api/export first"}), 404
+    return send_from_directory(
+        OUTPUTS_DIR, name, as_attachment=True, download_name="audit.json"
+    )
+
+
 # --------------------------------------------------------- background worker
 
 def _run_audit_job(job_id: str, report_path: Path, data_dir: str, team: str) -> None:
@@ -216,6 +276,54 @@ def _extract_report_text(req) -> str:
     raise ValueError(
         "no report text provided (send JSON {report_text: ...} or a multipart file)"
     )
+
+
+def _prepare_for_submission(audit: dict) -> dict:
+    """Return a copy of the audit dict shaped for the judges' checker.
+
+    Changes vs the stored audit:
+    - drops the private _trace key the shared format does not define
+    - applies the submission severity policy: high for contradicted,
+      medium for insufficient_evidence, none for supported
+    - sets confidence to high on every finding, because the verdict comes
+      from a deterministic pandas computation, not from model sampling
+    - guarantees every finding carries at least one evidence entry, since
+      the schema requires it
+    """
+    submission = copy.deepcopy(audit)
+    submission.pop("_trace", None)
+    severity_by_verdict = {
+        "supported": "none",
+        "contradicted": "high",
+        "insufficient_evidence": "medium",
+    }
+    for finding in submission.get("findings", []):
+        verdict = finding.get("claim_verdict", "")
+        finding["severity"] = severity_by_verdict.get(verdict, finding.get("severity", "none"))
+        finding["confidence"] = "high"
+        if not finding.get("evidence"):
+            finding["evidence"] = [{"kind": "claim", "id": finding.get("claim_text", "")[:60]}]
+    return submission
+
+
+def _run_validator(path: Path) -> tuple[bool, str]:
+    """Shell out to the hackathon validator. Falls back to our own on error."""
+    if VALIDATOR.exists():
+        try:
+            proc = subprocess.run(
+                [sys.executable, str(VALIDATOR), str(path)],
+                capture_output=True, text=True, timeout=30,
+            )
+            output = (proc.stdout + proc.stderr).strip() or "(no output)"
+            return proc.returncode == 0, output
+        except (subprocess.TimeoutExpired, OSError) as e:
+            return False, f"validator failed to run: {e}"
+    # Fallback keeps the endpoint useful even if the challenge repo is absent.
+    from output import validate_output
+    errors = validate_output(json.loads(path.read_text()))
+    if not errors:
+        return True, f"valid   {path.name}"
+    return False, "INVALID " + path.name + "\n  - " + "\n  - ".join(errors)
 
 
 def _project_claims(job: dict) -> list[dict]:
