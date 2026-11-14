@@ -19,7 +19,8 @@ from typing import Any
 from agents.base import BaseAgent
 from config import MAX_RETRIES
 from core.evidence import ClaimResult, Evidence, contradicted, insufficient, supported
-from core.loader import TCGARelease
+from core.loader import LAYER_FILES, TCGARelease
+from core.semantic import check_cannot_answer, get_schema_summary_for_prompt
 from core.trace import TraceCollector
 from tools.data_tool import DataTool
 from tools.manifest_tool import ManifestTool
@@ -70,7 +71,22 @@ Verdict rules:
 
 Keep reasoning concise. Prefer the manifest for cohort counts, schema_info to
 discover columns, and data_query for the actual numbers.
-"""
+
+Dataset Schema (TCGA-BRCA):
+
+{schema_summary}
+
+IMPORTANT RULES:
+- ONLY use columns listed above. If a column is not listed, it does not exist.
+- Check the "DOES NOT HAVE" lists FIRST. If the sentence requires data in a
+  DOES NOT HAVE list, call finalize_verdict('insufficient_evidence') right away
+  with a limitation that names the missing field.
+- Check "CANNOT ANSWER" FIRST. If the sentence topic matches, call
+  finalize_verdict('insufficient_evidence') with the reason from the schema.
+- Use the "LIMITATION" field on columns to inform your limitation text.
+- When a sentence mentions treatment response, hormone therapy, drug
+  efficacy, or causal relationships, the answer is ALWAYS insufficient_evidence.
+""".replace("{schema_summary}", get_schema_summary_for_prompt())
 
 
 def _finalize_tool_schema() -> dict:
@@ -150,6 +166,33 @@ class VerifierAgent(BaseAgent):
     # ------------------------------------------------------------------- run
 
     def run(self, claim_text: str) -> ClaimResult:
+        # Semantic-layer pre-check: if the claim's topic is in cannot_answer
+        # (hormone therapy, treatment response, drug efficacy, causal claims)
+        # we short-circuit instead of burning tool calls. This is what turns
+        # a 24-step fumble into a single decisive step.
+        blocked = check_cannot_answer(claim_text)
+        if blocked:
+            with self.trace_collector.start_step(self.name, "plan") as step:
+                step.input_data = {"claim": claim_text}
+                step.reasoning = (
+                    f"Semantic pre-check: claim matches cannot_answer topic "
+                    f"'{blocked['topic']}'. Skipping tool calls."
+                )
+                step.output_data = {"short_circuit": True, "topic": blocked["topic"]}
+            with self.trace_collector.start_step(self.name, "interpret") as step:
+                step.input_data = {"verdict": "insufficient_evidence"}
+                step.output_data = {
+                    "verdict": "insufficient_evidence",
+                    "confidence": "high",
+                }
+                step.reasoning = blocked["reason"]
+            return insufficient(
+                claim_text=claim_text,
+                reason=blocked["reason"],
+                confidence="high",
+                evidence=self._pre_check_evidence(blocked),
+            )
+
         messages: list[dict] = [{"role": "user", "content": _user_prompt(claim_text)}]
         tool_history: list[dict] = []
         final_input: dict | None = None
@@ -259,6 +302,38 @@ class VerifierAgent(BaseAgent):
             return fallback
 
         return self._build_result(claim_text, final_input, tool_history)
+
+    def _pre_check_evidence(self, blocked: dict) -> list[Evidence]:
+        """Evidence for a cannot_answer short-circuit.
+
+        The pre-check didn't run any tools, but a reviewer still needs to see
+        what the semantic layer looked at and found lacking. We point at the
+        clinical and protein files (the two that most topics would need) plus
+        a schema-layer analysis pointer naming the blocked topic.
+        """
+        topic = blocked.get("topic", "unknown")
+        reason = blocked.get("reason", "")
+        evidence = [
+            Evidence(
+                kind="analysis",
+                id="semantic_pre_check",
+                note=f"Topic '{topic}' is in cannot_answer. Reason: {reason[:200]}",
+            ),
+            Evidence(
+                kind="file",
+                id=LAYER_FILES["clinical"],
+                note="Schema inspected; no matching column for the claimed topic.",
+            ),
+        ]
+        # Protein-specific topics also benefit from naming the RPPA file,
+        # even though we did not scan its rows.
+        if any(k in topic.lower() for k in ("protein", "er-alpha", "er alpha", "hormone", "response")):
+            evidence.append(Evidence(
+                kind="file",
+                id=LAYER_FILES["protein"],
+                note="RPPA protein file available but carries no treatment-response data.",
+            ))
+        return evidence
 
     # ----------------------------------------------- result assembly helpers
 
