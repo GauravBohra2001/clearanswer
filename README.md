@@ -118,6 +118,38 @@ before the export click. A contradicted finding whose reviewer "approved"
 the claim appears as supported in the export, with `tool_verdict` and
 `reviewer_reason` preserved for audit trail.
 
+## Command-line interface
+
+`run.py` audits one report from the terminal without the web UI. Useful for
+batch runs and for the "a judge can rerun your work" requirement.
+
+```bash
+python run.py <data_dir> <report.md> [--output audit.json] [--verbose]
+```
+
+Arguments:
+
+- `<data_dir>` - a TCGA-BRCA release directory, for example
+  `oncosys-hackathon-challenge/data/tcga-brca/raw/` or
+  `oncosys-hackathon-challenge/envelopes/opened/E07/release/` on Saturday.
+- `<report.md>` - the Markdown or plain-text report to audit. PDF upload is
+  web-only; the CLI reads the file with UTF-8 text.
+- `--output` - where to write `audit.json` (default: `audit.json` in cwd).
+- `--verbose` - also print the full agent trace in Markdown.
+- `--team` - team name recorded in `audit.json` (default: `clearanswer`).
+
+Example against the practice brief:
+
+```bash
+python run.py \
+  oncosys-hackathon-challenge/data/tcga-brca/raw/ \
+  oncosys-hackathon-challenge/products/research-claim-auditor/practice_brief.md \
+  --output audit.json
+```
+
+Exit code is 0 when the resulting `audit.json` validates against
+`findings.schema.json`, 1 otherwise.
+
 ## API endpoints
 
 | Route | Purpose |
