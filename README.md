@@ -38,11 +38,27 @@ ANTHROPIC_API_KEY=your-key-here
 
 ## Practice envelope
 
+Unseal the practice envelope to get the fresh TCGA-BRCA release files:
+
 ```bash
 python oncosys-hackathon-challenge/envelopes/unseal.py practice orange meadow pilot lantern
 ```
 
-Then upload `envelopes/opened/practice/claim_auditor_report.md` in the UI.
+The practice envelope ships only the `release/` folder plus a `README.txt`.
+It does NOT include a `claim_auditor_report.md`. For the report, upload the
+practice brief that lives in the challenge repo:
+
+```
+oncosys-hackathon-challenge/products/research-claim-auditor/practice_brief.md
+```
+
+On Saturday the judging envelope DOES ship a `claim_auditor_report.md`
+alongside the release. The flow then is:
+
+```bash
+python oncosys-hackathon-challenge/envelopes/unseal.py <E??> <four-word code>
+# then upload envelopes/opened/E??/claim_auditor_report.md in the UI
+```
 
 ## Export
 
