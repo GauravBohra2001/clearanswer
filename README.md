@@ -172,4 +172,4 @@ Exit code is 0 when the resulting `audit.json` validates against
 
 ## Demo video
 
-[link placeholder]
+[Watch the 3-minute demo on YouTube](https://youtu.be/ksuU9nzCZtQ)

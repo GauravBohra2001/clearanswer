@@ -1,0 +1,164 @@
+{
+  "format_version": "0.2",
+  "producer": {
+    "team": "clearanswer",
+    "product": "research-claim-auditor",
+    "track": "evidence-navigator"
+  },
+  "data": {
+    "dataset": "TCGA-BRCA",
+    "releases": [
+      {
+        "name": "raw",
+        "files": [
+          {
+            "file": "clinical.tsv",
+            "sha256": "39eb3be0fb86e6a577bd2cc01502a7fa5a271e1e1cba294e9dc644ad99580d7f",
+            "hash_of": "file"
+          },
+          {
+            "file": "survival.tsv",
+            "sha256": "6c9e18ae9c2b8bacc48cd5a60cde97e8880ae2e84e48df437a0378b17e659b73",
+            "hash_of": "file"
+          },
+          {
+            "file": "mutation_gene_level.tsv.gz",
+            "sha256": "ceaf6a01fd983cefc7fca8b52f6c65121acc87b75f4d170b9fcdc07ee16a3813",
+            "hash_of": "file"
+          },
+          {
+            "file": "copy_number_gistic.tsv.gz",
+            "sha256": "c45b1f8ea19c8dc20bd614d0863a40cccc633518d0ad05d2c7fff5f75781e980",
+            "hash_of": "file"
+          },
+          {
+            "file": "protein_rppa.tsv.gz",
+            "sha256": "7823a7a375495f7e5f114d0c7ec8773e070cb9ac409785f98045d12ab71195e6",
+            "hash_of": "file"
+          },
+          {
+            "file": "rna_hiseq.tsv.gz",
+            "sha256": "263bf67245cc4b9062676583c0ff0306f08471a26aafd5504037e1da22133746",
+            "hash_of": "file"
+          }
+        ]
+      }
+    ]
+  },
+  "question": "Check the factual claims in the report against the TCGA-BRCA release. (report: /var/folders/s3/8szxbq_97gd9h3wzx3ct9kcr0000gn/T/clearanswer_jobs/40bd69b151e94ba38ffc4c3e45c78a1d/report.md)",
+  "findings": [
+    {
+      "id": "F-001",
+      "kind": "claim_check",
+      "summary": "Supported: Of the 1,101 primary tumors in the release, 535 have survival, mutation, copy number, RNA and protein data.",
+      "severity": "none",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-001",
+          "note": "Of the 1,101 primary tumors in the release, 535 have survival, mutation, copy number, RNA and protein data."
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "release": "raw"
+        }
+      ],
+      "claim_text": "Of the 1,101 primary tumors in the release, 535 have survival, mutation, copy number, RNA and protein data.",
+      "claim_verdict": "supported",
+      "needs_human_review": false,
+      "why_it_matters": "These two numbers define the denominators used in every multi-layer analysis in the report; both are confirmed correct, so downstream subgroup statistics built on 1,101 or 535 start from a valid base.",
+      "next_step": "No correction needed. If the report uses the 535-sample fully-overlapping cohort for any survival or integrative analysis, confirm that the analysis code also applies the same five-layer filter (has_survival AND has_mutation AND has_copy_number AND has_rna AND has_protein) to avoid silently including partially-covered samples.",
+      "cannot_tell": "This audit checks layer availability flags in the manifest, not data quality within each layer (e.g., samples with very low mutation coverage or RNA outliers that may warrant exclusion even though the flag is TRUE).",
+      "tool_verdict": "supported",
+      "reviewer_decision": "accept"
+    },
+    {
+      "id": "F-002",
+      "kind": "claim_check",
+      "summary": "Contradicted: Luminal A is the largest RNA subtype, accounting for about 62% of primary tumors with an RNA subtype call. Correct value: 49.9% (421 of 844); full distribution: LumA 49.9%, LumB 22.7%, Basal 16.7%, Her2 7.9%, Normal 2.7%",
+      "severity": "high",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-002",
+          "note": "Luminal A is the largest RNA subtype, accounting for about 62% of primary tumors with an RNA subtype call."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        }
+      ],
+      "claim_text": "Luminal A is the largest RNA subtype, accounting for about 62% of primary tumors with an RNA subtype call.",
+      "claim_verdict": "contradicted",
+      "needs_human_review": false,
+      "correct_value": "49.9% (421 of 844); full distribution: LumA 49.9%, LumB 22.7%, Basal 16.7%, Her2 7.9%, Normal 2.7%",
+      "limitation": "257 of 1,101 primary tumors lack a PAM50Call_RNAseq value and are excluded from this percentage; the denominator used here (844) matches 'primary tumors with an RNA subtype call' as stated in the claim.",
+      "why_it_matters": "A 12-point overstatement of LumA prevalence (62% vs. 49.9%) would significantly skew any subtype-stratified survival, biomarker, or therapeutic analysis that uses this share as a baseline or weighting factor.",
+      "next_step": "Correct \"~62%\" to \"~50% (421 of 844)\" wherever this figure appears (text, tables, figures), and re-examine any downstream analyses \u2014 such as subtype-stratified survival curves or enrichment tests \u2014 that relied on the inflated LumA share as a denominator or prior.",
+      "alternatives": [
+        {
+          "column": "PAM50Call_RNAseq (% of all 1,101 primary tumors incl. NAs)",
+          "value": "38.2% (421/1101)",
+          "note": "If the denominator is ALL primary tumors rather than only those with a subtype call, LumA is an even smaller share (38.2%), making the 62% claim even more overstated."
+        }
+      ]
+    },
+    {
+      "id": "F-003",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Patients whose tumors had the highest ER-alpha protein responded best to hormone therapy, which suggests protein data c...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-003",
+          "note": "Patients whose tumors had the highest ER-alpha protein responded best to hormone therapy, which suggests protein data could guide treatment research."
+        },
+        {
+          "kind": "analysis",
+          "id": "semantic_pre_check",
+          "note": "Topic 'hormone therapy' is in cannot_answer. Reason: No hormone-therapy or endocrine-therapy column exists in clinical.tsv. Available therapy fields are radiation_therapy, targeted_molecular_therapy, and additional_pharmaceutical_therapy (all YES/NO flags only, no response measure). Verifying hormone therapy claims would require METABRIC or a neo-adjuvant endocrine therapy trial."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "Schema inspected; no matching column for the claimed topic.",
+          "release": "raw"
+        },
+        {
+          "kind": "file",
+          "id": "protein_rppa.tsv.gz",
+          "note": "RPPA protein file available but carries no treatment-response data.",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "Topic 'hormone therapy' is in cannot_answer. Reason: No hormone-therapy or endocrine-therapy column exists in clinical.tsv. Available therapy fields are radiation_therapy, targeted_molecular_therapy, and additional_pharmaceutical_therapy (all YES/NO flags only, no response measure). Verifying hormone therapy claims would require METABRIC or a neo-adjuvant endocrine therapy trial."
+        }
+      ],
+      "claim_text": "Patients whose tumors had the highest ER-alpha protein responded best to hormone therapy, which suggests protein data could guide treatment research.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "clinical.tsv records radiation_therapy, targeted_molecular_therapy, and additional_pharmaceutical_therapy as yes/no flags, plus new_tumor_event_after_initial_treatment and days_to_new_tumor_event, but it has no hormone-therapy records and no response measure. Verifying this claim would require a treated cohort like METABRIC or a neo-adjuvant endocrine therapy trial with response annotations.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    }
+  ]
+}

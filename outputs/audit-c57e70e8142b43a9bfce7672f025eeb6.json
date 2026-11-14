@@ -1,0 +1,2242 @@
+{
+  "format_version": "0.2",
+  "producer": {
+    "team": "clearanswer",
+    "product": "research-claim-auditor",
+    "track": "evidence-navigator"
+  },
+  "data": {
+    "dataset": "TCGA-BRCA",
+    "releases": [
+      {
+        "name": "raw",
+        "files": [
+          {
+            "file": "clinical.tsv",
+            "sha256": "39eb3be0fb86e6a577bd2cc01502a7fa5a271e1e1cba294e9dc644ad99580d7f",
+            "hash_of": "file"
+          },
+          {
+            "file": "survival.tsv",
+            "sha256": "6c9e18ae9c2b8bacc48cd5a60cde97e8880ae2e84e48df437a0378b17e659b73",
+            "hash_of": "file"
+          },
+          {
+            "file": "mutation_gene_level.tsv.gz",
+            "sha256": "ceaf6a01fd983cefc7fca8b52f6c65121acc87b75f4d170b9fcdc07ee16a3813",
+            "hash_of": "file"
+          },
+          {
+            "file": "copy_number_gistic.tsv.gz",
+            "sha256": "c45b1f8ea19c8dc20bd614d0863a40cccc633518d0ad05d2c7fff5f75781e980",
+            "hash_of": "file"
+          },
+          {
+            "file": "protein_rppa.tsv.gz",
+            "sha256": "7823a7a375495f7e5f114d0c7ec8773e070cb9ac409785f98045d12ab71195e6",
+            "hash_of": "file"
+          },
+          {
+            "file": "rna_hiseq.tsv.gz",
+            "sha256": "263bf67245cc4b9062676583c0ff0306f08471a26aafd5504037e1da22133746",
+            "hash_of": "file"
+          }
+        ]
+      }
+    ]
+  },
+  "question": "Check the factual claims in the report against the TCGA-BRCA release. (report: /var/folders/s3/8szxbq_97gd9h3wzx3ct9kcr0000gn/T/clearanswer_jobs/c57e70e8142b43a9bfce7672f025eeb6/report.md)",
+  "findings": [
+    {
+      "id": "F-001",
+      "kind": "claim_check",
+      "summary": "Contradicted: Tumour and germline DNA samples were obtained from 825 patients. Correct value: The TCGA-BRCA release contains 1,101 primary-tumour samples from 1,101 unique patients; 139 patients also have a matched Solid Tissue Normal (germline-proxy) sample; 791 primary-tumour patients have mutation (DNA) data. No patient count of 825 matches any combination of sample types or DNA-layer filters in this release.",
+      "severity": "high",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-001",
+          "note": "Tumour and germline DNA samples were obtained from 825 patients."
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "note": "value_counts on sample_manifest (column=sample_type)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on sample_manifest (column=sample_type)",
+          "note": "Primary Tumor=1101, Solid Tissue Normal=139, Metastatic=7"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:unique on sample_manifest (column=patient_id)",
+          "note": "1101"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on sample_manifest (where={'sample_type': 'Solid Tissue Normal'})",
+          "note": "139"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on sample_manifest (primary_only=true)",
+          "note": "1101"
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "count on mutation (primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on mutation (primary_only=true)",
+          "note": "40543"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on sample_manifest (where={'has_mutation': True})",
+          "note": "791"
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "count on clinical (primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on clinical (primary_only=true)",
+          "note": "1101"
+        },
+        {
+          "kind": "file",
+          "id": "survival.tsv",
+          "note": "count on survival",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on survival",
+          "note": "1236"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "Primary Tumor=1101, Solid Tissue Normal=139, Metastatic=7"
+        }
+      ],
+      "claim_text": "Tumour and germline DNA samples were obtained from 825 patients.",
+      "claim_verdict": "contradicted",
+      "needs_human_review": false,
+      "correct_value": "The TCGA-BRCA release contains 1,101 primary-tumour samples from 1,101 unique patients; 139 patients also have a matched Solid Tissue Normal (germline-proxy) sample; 791 primary-tumour patients have mutation (DNA) data. No patient count of 825 matches any combination of sample types or DNA-layer filters in this release.",
+      "why_it_matters": "An incorrect patient count of 825 (vs. the true 1,101 primary-tumour patients or 791 with DNA data) misrepresents the size and scope of the cohort, which would affect power calculations, subgroup analyses, and any downstream claims that use this figure as a denominator.",
+      "next_step": "Identify the source of the 825 figure\u2014it may refer to an earlier TCGA-BRCA publication (e.g. the 2012 Nature paper used ~825 patients) rather than this frozen release. Correct the patient count in the methods/results section to reflect the actual release size (1,101 primary-tumour patients; 791 with mutation data; 139 with matched normal tissue) and verify that all downstream denominators are updated consistently.",
+      "cannot_tell": "TCGA-BRCA had multiple phased releases; the 825-patient figure may be accurate for an older release (e.g. the 2012 Nature paper). This audit only covers the current frozen release (1,247 samples in sample_manifest.csv). True germline DNA (blood-derived) is not distinguished from solid tissue normal in this release's manifest, so we cannot confirm whether all 139 normal-tissue samples represent true germline specimens.",
+      "alternatives": [
+        {
+          "column": "has_mutation (Primary Tumor)",
+          "value": "791 patients",
+          "note": "Primary-tumour patients with any mutation/DNA data in this release"
+        },
+        {
+          "column": "Solid Tissue Normal sample_type",
+          "value": "139 patients",
+          "note": "Patients with a matched normal-tissue (germline-proxy) sample"
+        },
+        {
+          "column": "All unique patient_id values",
+          "value": "1,101 patients",
+          "note": "Total unique patients with a primary-tumour sample"
+        }
+      ]
+    },
+    {
+      "id": "F-002",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: 466 tumours from 463 patients had data available on five platforms includingAgilentmRNAexpressionmicroarrays(n5547),Ill...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-002",
+          "note": "466 tumours from 463 patients had data available on five platforms includingAgilentmRNAexpressionmicroarrays(n5547),Illumina Infinium DNA methylation chips (n5802), Affymetrix 6.0 single nucleotidepolymorphism(SNP)arrays(n5773),miRNAsequencing (n5697),andwhole-exomesequencing(n5507);inaddition,348of the 466 samples also had reverse-phase protein array (RPPA) data (n5403)."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=methylation_Clusters_nature2012, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=methylation_Clusters_nature2012, primary_only",
+          "note": "nan=302, 4.0=243, 2.0=172, 5.0=146, 1.0=137"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on clinical (primary_only=true, where={'_GENOMIC_ID_TCGA_BRCA_G4502A_07_",
+          "note": "1101"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:describe on clinical (column=_GENOMIC_ID_TCGA_BRCA_G4502A_07_3)",
+          "note": "dtype=str, non_null=597, null=650, n_unique=597, numeric=False"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "nan=302, 4.0=243, 2.0=172, 5.0=146, 1.0=137"
+        }
+      ],
+      "claim_text": "466 tumours from 463 patients had data available on five platforms includingAgilentmRNAexpressionmicroarrays(n5547),Illumina Infinium DNA methylation chips (n5802), Affymetrix 6.0 single nucleotidepolymorphism(SNP)arrays(n5773),miRNAsequencing (n5697),andwhole-exomesequencing(n5507);inaddition,348of the 466 samples also had reverse-phase protein array (RPPA) data (n5403).",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-003",
+      "kind": "claim_check",
+      "summary": "Contradicted: Owing to the short median overall follow up (17months) andthesmallnumberofoverallsurvivalevents(93outof818),survival an... Correct value: Median OS.time = 921 days (~30.3 months, not 17 months); OS events = 202 (not 93); total patients in survival table = 1,236 (1,097 primary tumors), not 818",
+      "severity": "high",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-003",
+          "note": "Owing to the short median overall follow up (17months) andthesmallnumberofoverallsurvivalevents(93outof818),survival analyses will be presented in a later publication."
+        },
+        {
+          "kind": "file",
+          "id": "survival.tsv",
+          "note": "describe on survival (column=OS.time)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:describe on survival (column=OS.time)",
+          "note": "dtype=float64, non_null=1235, null=1, n_unique=830, numeric=True"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on survival (column=OS)",
+          "note": "0=1034, 1=202"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on survival",
+          "note": "1236"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:aggregate on survival (column=OS.time)",
+          "note": "921.0"
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "dtype=float64, non_null=1235, null=1, n_unique=830, numeric=True"
+        }
+      ],
+      "claim_text": "Owing to the short median overall follow up (17months) andthesmallnumberofoverallsurvivalevents(93outof818),survival analyses will be presented in a later publication.",
+      "claim_verdict": "contradicted",
+      "needs_human_review": false,
+      "correct_value": "Median OS.time = 921 days (~30.3 months, not 17 months); OS events = 202 (not 93); total patients in survival table = 1,236 (1,097 primary tumors), not 818",
+      "limitation": "The survival.tsv does not distinguish observational follow-up time from treatment-specific follow-up windows; if the report's 17-month / 818-patient figure was derived from a specific clinical sub-cohort (e.g., a trial arm or a subset with complete therapy data), that sub-cohort filter cannot be reproduced from TCGA-BRCA alone.",
+      "why_it_matters": "All three headline statistics used to justify deferring survival analyses are wrong \u2014 the actual median follow-up (~30 months) is nearly twice as long and the event count (202) is more than double the stated 93, so the stated rationale for omitting survival analyses does not hold for this TCGA-BRCA release.",
+      "next_step": "Replace the three figures in the justification sentence: median follow-up ~30.3 months (921 days), 202 OS events out of 1,097 primary-tumor patients (or 1,236 total survival records). Then reassess whether the stated reason for deferring survival analyses is still valid given these corrected numbers.",
+      "cannot_tell": "Whether the report used a specific filtered sub-cohort (e.g., patients enrolled after a particular date, or restricted to a specific treatment arm) that would yield a smaller N and shorter follow-up; such a filter is not documented in the TCGA-BRCA clinical or survival tables."
+    },
+    {
+      "id": "F-004",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Overall, 510 tumours from 507 patients were subjected to whole- exome sequencing, identifying 30,626 somatic mutations ...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-004",
+          "note": "Overall, 510 tumours from 507 patients were subjected to whole- exome sequencing, identifying 30,626 somatic mutations comprised of 28,319 point mutations, 4 dinucleotide mutations, and 2,302 insertions/deletions (indels) (ranging from 1 to 53 nucleotides)."
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "count on mutation (primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on mutation (primary_only=true)",
+          "note": "40543"
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "note": "value_counts on sample_manifest (column=sample_type)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on sample_manifest (column=sample_type)",
+          "note": "Primary Tumor=1101, Solid Tissue Normal=139, Metastatic=7"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "Primary Tumor=1101, Solid Tissue Normal=139, Metastatic=7"
+        }
+      ],
+      "claim_text": "Overall, 510 tumours from 507 patients were subjected to whole- exome sequencing, identifying 30,626 somatic mutations comprised of 28,319 point mutations, 4 dinucleotide mutations, and 2,302 insertions/deletions (indels) (ranging from 1 to 53 nucleotides).",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "The mutation layer ('mutation_gene_level.tsv.gz') is a gene-level binary MC3 matrix with 791 primary-tumor samples. It contains no per-mutation records, no mutation-type field (SNP / dinucleotide / indel), no nucleotide-level annotations, and no indel-length information. The specific columns searched were: has_mutation (sample_manifest), and the mutation matrix columns (sample barcodes only, no mutation-type metadata). Verifying counts of 30,626 somatic mutations or their breakdown would require the raw MAF file (e.g., TCGA-BRCA.muse_snv.tsv or equivalent) from GDC or the original 2012 Nature paper supplementary data, which is not present in this release.",
+      "why_it_matters": "The claimed cohort of 510 tumours / 507 patients and the precise mutation-type breakdown (28,319 SNPs, 4 dinucleotides, 2,302 indels) cannot be verified because the available mutation layer aggregates to gene-level binary calls across 791 samples \u2014 a fundamentally different data structure and cohort size than what the claim describes.",
+      "next_step": "To verify this claim, obtain the per-mutation MAF file (e.g., from GDC Data Portal: TCGA-BRCA Masked Somatic Mutation MAF) and filter to the 510-sample WES cohort; then count rows by Variant_Type (SNP, DNP, INS/DEL) to reproduce the totals. The discrepancy in sample count (510 vs. 791) also warrants clarification \u2014 confirm whether the claim refers to an earlier TCGA-BRCA release or a subset of samples with WES-specific coverage criteria."
+    },
+    {
+      "id": "F-005",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: The point mutations included 6,486 silent, 19,045 missense, 1,437 nonsense, 26 read-through, 506 splice-site mutations,...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-005",
+          "note": "The point mutations included 6,486 silent, 19,045 missense, 1,437 nonsense, 26 read-through, 506 splice-site mutations, and 819 muta- tions in RNA genes."
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "release": "raw"
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "release": "raw"
+        }
+      ],
+      "claim_text": "The point mutations included 6,486 silent, 19,045 missense, 1,437 nonsense, 26 read-through, 506 splice-site mutations, and 819 muta- tions in RNA genes.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "The mutation layer is `mutation_gene_level.tsv.gz`, a gene \u00d7 sample binary matrix derived from MC3 calls. It carries no per-mutation annotations. Searched all six layers and both manifests for columns named variant_classification, mutation_type, silent, missense, nonsense, splice, variant \u2014 zero matches in every case. Verifying this claim requires the raw TCGA MC3 MAF file (mc3.v0.2.8.PUBLIC.maf.gz, available from GDC or Synapse), which records `Variant_Classification` for every somatic mutation call.",
+      "why_it_matters": "These six counts collectively characterize the entire somatic mutation landscape of the cohort; if the missense count (19,045) or nonsense count (1,437) were wrong, any downstream mutation-burden or functional-impact analyses built on them would be miscalibrated.",
+      "next_step": "Retrieve the TCGA MC3 MAF file and run `value_counts()` on its `Variant_Classification` column, filtered to BRCA samples, to verify the six per-category counts. The MAF is publicly available at https://gdc.cancer.gov/about-data/publications/mc3-2017 or via Synapse (syn7824274).",
+      "cannot_tell": "This audit cannot confirm or refute any of the six numbers (6,486 silent; 19,045 missense; 1,437 nonsense; 26 read-through; 506 splice-site; 819 RNA-gene) because the per-variant MAF is not part of this TCGA-BRCA data release. Only the MC3 MAF \u2014 not loaded here \u2014 contains the `Variant_Classification` field needed to reproduce these counts."
+    },
+    {
+      "id": "F-006",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Comparison to COSMIC and OMIM databases identified619mutationsacross177previouslyreportedcancergenes.",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-006",
+          "note": "Comparison to COSMIC and OMIM databases identified619mutationsacross177previouslyreportedcancergenes."
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "count on mutation (primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on mutation (primary_only=true)",
+          "note": "40543"
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "release": "raw"
+        }
+      ],
+      "claim_text": "Comparison to COSMIC and OMIM databases identified619mutationsacross177previouslyreportedcancergenes.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "The mutation layer (mutation_gene_level.tsv.gz) is a binary gene \u00d7 sample matrix derived from MC3 calls. It carries no per-variant records (no chromosome, position, ref/alt allele, or consequence fields), and no COSMIC gene census or OMIM disease-gene columns exist in any layer. The 619 and 177 figures could only be verified against the original MAF file cross-referenced with an external COSMIC/OMIM gene list that is not part of this release.",
+      "why_it_matters": "The specific counts (619 mutations, 177 cancer genes) are presented as a key filtering step that determines which genes enter downstream analyses; if these numbers are wrong the entire cancer-gene-focused analysis rests on an incorrect denominator.",
+      "next_step": "Retrieve the original MC3 MAF file for TCGA-BRCA, download the COSMIC Cancer Gene Census and OMIM morbid-gene list used in the study, re-run the cross-reference filter, and confirm that exactly 619 variant calls span exactly 177 genes; report the actual MAF version and database release dates used.",
+      "cannot_tell": "This audit cannot determine whether 619 and 177 are correct because the TCGA-BRCA release only exposes a gene-level binary mutation matrix (no per-variant rows, no COSMIC/OMIM annotations). It also cannot assess which COSMIC version or OMIM snapshot was used, or whether the count refers to unique variants, unique (gene, sample) pairs, or unique gene-level hits."
+    },
+    {
+      "id": "F-007",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Of 19,045 missense mutations, 9,484 were predicted to have a high probability of being deleterious by Condel15.",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-007",
+          "note": "Of 19,045 missense mutations, 9,484 were predicted to have a high probability of being deleterious by Condel15."
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "release": "raw"
+        }
+      ],
+      "claim_text": "Of 19,045 missense mutations, 9,484 were predicted to have a high probability of being deleterious by Condel15.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "The mutation layer (mutation_gene_level.tsv.gz) is a binary gene\u00d7sample presence/absence matrix \u2014 it has no variant-level rows, no Variant_Classification field, and no functional-impact scores (Condel, SIFT, PolyPhen, etc.). Verifying this claim requires access to the underlying MAF file (e.g., the MC3 public MAF from GDC or Broad Firehose) which includes one row per somatic variant, a Variant_Classification column to filter to \"Missense_Mutation\", and a Condel or equivalent score column.",
+      "why_it_matters": "Both numbers (19,045 missense mutations; 9,484 predicted deleterious) are headline statistics about the functional impact of somatic variation in the cohort \u2014 if either is wrong, any downstream analysis of deleterious mutation burden or Condel15-stratified outcomes is built on a faulty denominator.",
+      "next_step": "Re-run this check against the MC3 somatic mutation MAF (available from GDC portal as mc3.v0.2.8.PUBLIC.maf.gz), filtering to TCGA-BRCA tumor barcodes, then count rows where Variant_Classification == 'Missense_Mutation' (expected \u2248 19,045) and where the Condel score meets the \"deleterious\" threshold used by the authors (expected \u2248 9,484). Confirm the exact Condel15 threshold value in the Methods section.",
+      "cannot_tell": "This audit cannot determine whether 19,045 missense mutations or 9,484 Condel15-deleterious variants are correct because the TCGA-BRCA release ingested here does not include the raw MAF. It also cannot evaluate whether \"Condel15\" refers to a specific score threshold (e.g., \u2265 0.5) applied to the Condel algorithm, as the scoring methodology is not documented in this dataset."
+    },
+    {
+      "id": "F-008",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: The MuSiC package16, which determines the significance of the observed mutation rate of each gene based on the backgrou...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-008",
+          "note": "The MuSiC package16, which determines the significance of the observed mutation rate of each gene based on the background mutation rate, identified 35 sig- nificantly mutated genes (excluding LOC or Ensembl gene IDs) by at least two tests (convolution and likelihood ratio tests) with false dis- covery rate (FDR) ,5% (Supplementary Table 2)."
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "count on mutation",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on mutation",
+          "note": "40543"
+        }
+      ],
+      "claim_text": "The MuSiC package16, which determines the significance of the observed mutation rate of each gene based on the background mutation rate, identified 35 sig- nificantly mutated genes (excluding LOC or Ensembl gene IDs) by at least two tests (convolution and likelihood ratio tests) with false dis- covery rate (FDR) ,5% (Supplementary Table 2).",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "The TCGA-BRCA release includes raw mutation calls (mutation_gene_level.tsv.gz) but no MuSiC analysis outputs. Verifying the count of 35 significantly mutated genes would require: (1) the full per-mutation MAF/VCF file (not just gene-level binary calls) to supply to MuSiC, (2) a background mutation rate model, (3) the actual MuSiC convolution and likelihood ratio test results, and (4) the FDR-corrected p-value table referenced as 'Supplementary Table 2' in the paper. Searched all layers for columns named 'FDR', 'pvalue', 'MuSiC', and 'significant' \u2014 zero matches across all layers.",
+      "why_it_matters": "The count of 35 significantly mutated genes is a headline result that defines which genes are considered cancer drivers in the BRCA cohort; if this number is wrong, all downstream pathway and subtype analyses built on these driver genes would be affected.",
+      "next_step": "To verify this claim, obtain the original MuSiC output table (the paper's Supplementary Table 2), confirm that exactly 35 genes survive the dual-test (convolution AND likelihood ratio), FDR <5% filter after excluding gene IDs starting with 'LOC' or matching Ensembl format (ENSG\u2026), and cross-check against the MC3 MAF for the same TCGA-BRCA cohort used in the paper.",
+      "cannot_tell": "This audit cannot assess whether the 35-gene count is correct because the TCGA-BRCA release does not store MuSiC statistical outputs. It also cannot determine which version of the mutation callset (MC3 vs. an earlier TCGA pipeline version) was used in the original analysis, which could affect gene-level mutation rates and therefore significance calls."
+    },
+    {
+      "id": "F-009",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Additionally, 2 mutations were found in TBX4 and 1 muta- tion in TBX5, which are genes involved in Holt\u2013Oram syndrome18.",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-009",
+          "note": "Additionally, 2 mutations were found in TBX4 and 1 muta- tion in TBX5, which are genes involved in Holt\u2013Oram syndrome18."
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "describe on mutation (column=TCGA-3C-AAAU-01)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:describe on mutation (column=TCGA-3C-AAAU-01)",
+          "note": "dtype=int64, non_null=40543, null=0, n_unique=2, numeric=True"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "dtype=int64, non_null=40543, null=0, n_unique=2, numeric=True"
+        }
+      ],
+      "claim_text": "Additionally, 2 mutations were found in TBX4 and 1 muta- tion in TBX5, which are genes involved in Holt\u2013Oram syndrome18.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-010",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Two other transcription factors, CTCF and FOXA1, were at or near significanceharbouring13and8mutations,respectively.",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-010",
+          "note": "Two other transcription factors, CTCF and FOXA1, were at or near significanceharbouring13and8mutations,respectively."
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "describe on mutation (column=TCGA-3C-AAAU-01)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:describe on mutation (column=TCGA-3C-AAAU-01)",
+          "note": "dtype=int64, non_null=40543, null=0, n_unique=2, numeric=True"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:aggregate on mutation (column=TCGA-3C-AAAU-01, group_by=TCGA-3C-AALI-01)",
+          "note": "0=22.0, 1=0.0"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "dtype=int64, non_null=40543, null=0, n_unique=2, numeric=True"
+        }
+      ],
+      "claim_text": "Two other transcription factors, CTCF and FOXA1, were at or near significanceharbouring13and8mutations,respectively.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-011",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: RUNX1and CBFB, both rearranged in acute myeloid leukaemia and interfering with haematopoietic differentiation, harboure...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-011",
+          "note": "RUNX1and CBFB, both rearranged in acute myeloid leukaemia and interfering with haematopoietic differentiation, harboured 19 and 9 mutations, respectively."
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "describe on mutation (column=TCGA-3C-AAAU-01)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:describe on mutation (column=TCGA-3C-AAAU-01)",
+          "note": "dtype=int64, non_null=40543, null=0, n_unique=2, numeric=True"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on mutation (where={'TCGA-3C-AAAU-01': 1})",
+          "note": "22"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "dtype=int64, non_null=40543, null=0, n_unique=2, numeric=True"
+        }
+      ],
+      "claim_text": "RUNX1and CBFB, both rearranged in acute myeloid leukaemia and interfering with haematopoietic differentiation, harboured 19 and 9 mutations, respectively.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-012",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: PIK3R1contained14mutations,mostofwhichclustered in the PIK3CA interaction domain similar to previously identified mutat...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-012",
+          "note": "PIK3R1contained14mutations,mostofwhichclustered in the PIK3CA interaction domain similar to previously identified mutations in glioma19 and endometrial cancer20."
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "filter on mutation (where={'TCGA-3C-AAAU-01': {'op': '>=', 'value': 0}})",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on mutation (where={'TCGA-3C-AAAU-01': {'op': '>=', 'value': 0}})",
+          "note": "40543"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:aggregate on mutation (column=TCGA-3C-AAAU-01, group_by=TCGA-3C-AALI-01)",
+          "note": "0=22.0, 1=0.0"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on mutation (where={'TCGA-A1-A0SB-01': {'op': '>=', 'value': 1}})",
+          "note": "14"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on mutation (where={'TCGA-A1-A0SB-01': {'op': '>=', 'value': 0}})",
+          "note": "40543"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "0=22.0, 1=0.0"
+        }
+      ],
+      "claim_text": "PIK3R1contained14mutations,mostofwhichclustered in the PIK3CA interaction domain similar to previously identified mutations in glioma19 and endometrial cancer20.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-013",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: We also observed a statistically significant exclusion pattern among PIK3R1, PIK3CA, PTEN and AKT1 mutations (P50.025).",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-013",
+          "note": "We also observed a statistically significant exclusion pattern among PIK3R1, PIK3CA, PTEN and AKT1 mutations (P50.025)."
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "filter on mutation (where={'TCGA-3C-AAAU-01': {'op': '>=', 'value': 1}})",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on mutation (where={'TCGA-3C-AAAU-01': {'op': '>=', 'value': 1}})",
+          "note": "22"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:describe on mutation (column=TCGA-3C-AAAU-01)",
+          "note": "dtype=int64, non_null=40543, null=0, n_unique=2, numeric=True"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "dtype=int64, non_null=40543, null=0, n_unique=2, numeric=True"
+        }
+      ],
+      "claim_text": "We also observed a statistically significant exclusion pattern among PIK3R1, PIK3CA, PTEN and AKT1 mutations (P50.025).",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-014",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Mutation of splicing factor SF3B1, previously described in myelodysplastic syndromes21 and chronic lymphocytic leukaemi...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-014",
+          "note": "Mutation of splicing factor SF3B1, previously described in myelodysplastic syndromes21 and chronic lymphocytic leukaemia22, was significant with 15 non-silent mutations, of which 4 were a recurrent K700E substitution."
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "describe on mutation (column=TCGA-3C-AAAU-01)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:describe on mutation (column=TCGA-3C-AAAU-01)",
+          "note": "dtype=int64, non_null=40543, null=0, n_unique=2, numeric=True"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on mutation (where={'TCGA-3C-AAAU-01': {'op': '>=', 'value': 0}})",
+          "note": "40543"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "dtype=int64, non_null=40543, null=0, n_unique=2, numeric=True"
+        }
+      ],
+      "claim_text": "Mutation of splicing factor SF3B1, previously described in myelodysplastic syndromes21 and chronic lymphocytic leukaemia22, was significant with 15 non-silent mutations, of which 4 were a recurrent K700E substitution.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "The mutation layer (mutation_gene_level.tsv.gz) stores only binary gene-level calls (MC3 pipeline). It has no Variant_Classification column to filter non-silent mutations, no mutation-count column, and no amino-acid change annotation (HGVSp / protein change). Verifying this claim requires the full MC3 MAF file (available from GDC) with columns such as Variant_Classification, Hugo_Symbol = SF3B1, and HGVSp_Short = p.K700E.",
+      "why_it_matters": "SF3B1 K700E is a functionally significant hotspot mutation originally highlighted in the TCGA breast cancer paper; confirming the exact count of 15 non-silent mutations (4 of which are K700E) requires variant-level MAF data not present in this release, so the specific numbers cannot be validated or refuted here.",
+      "next_step": "Retrieve the TCGA-BRCA MC3 MAF file from GDC (maf.gz), filter for Hugo_Symbol == 'SF3B1', count rows where Variant_Classification is not 'Silent' (should total 15), and among those count HGVSp_Short == 'p.K700E' (should be 4). Then confirm the numbers match the paper's Table S2 or supplementary mutation frequency table.",
+      "cannot_tell": "This audit cannot confirm or deny the total non-silent mutation count (15) or the K700E hotspot count (4) because the available mutation layer collapses all per-variant detail into a single binary flag per gene. It also cannot assess whether these mutations reach statistical significance (q-value) under MutSig or any other gene-discovery framework, as no such output is stored in this release."
+    },
+    {
+      "id": "F-015",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: TheluminalAsubtypeharbouredthemost significantly mutated genes, with the most frequent being PIK3CA (45%), followed by ...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-015",
+          "note": "TheluminalAsubtypeharbouredthemost significantly mutated genes, with the most frequent being PIK3CA (45%), followed by MAP3K1, GATA3, TP53, CDH1 and MAP2K4."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on clinical (where={'PAM50Call_RNAseq': 'LumA'})",
+          "note": "434"
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "filter on mutation (where={'TCGA-3C-AAAU-01': {'op': '>=', 'value': 0}})",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on mutation (where={'TCGA-3C-AAAU-01': {'op': '>=', 'value': 0}})",
+          "note": "40543"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:describe on mutation (column=TCGA-A1-A0SD-01)",
+          "note": "dtype=int64, non_null=40543, null=0, n_unique=2, numeric=True"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        }
+      ],
+      "claim_text": "TheluminalAsubtypeharbouredthemost significantly mutated genes, with the most frequent being PIK3CA (45%), followed by MAP3K1, GATA3, TP53, CDH1 and MAP2K4.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-016",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Luminal B cancers exhibited a diversity of significantly mutated genes, with TP53 and PIK3CA (29% each) being the most ...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-016",
+          "note": "Luminal B cancers exhibited a diversity of significantly mutated genes, with TP53 and PIK3CA (29% each) being the most frequent."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on clinical (where={'PAM50Call_RNAseq': 'LumB'})",
+          "note": "194"
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "aggregate on mutation (column=TCGA-3C-AAAU-01)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:aggregate on mutation (column=TCGA-3C-AAAU-01)",
+          "note": "22.0"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        }
+      ],
+      "claim_text": "Luminal B cancers exhibited a diversity of significantly mutated genes, with TP53 and PIK3CA (29% each) being the most frequent.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-017",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: The HER2E subtype, which has frequent HER2amplification(80%),hadahybridpatternwithahighfrequency of TP53 (72%) and PIK3...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-017",
+          "note": "The HER2E subtype, which has frequent HER2amplification(80%),hadahybridpatternwithahighfrequency of TP53 (72%) and PIK3CA (39%) mutations and a much lower fre- quency of other significantly mutated genes including PIK3R1 (4%)."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on clinical (where={'PAM50Call_RNAseq': 'Her2'})",
+          "note": "67"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        }
+      ],
+      "claim_text": "The HER2E subtype, which has frequent HER2amplification(80%),hadahybridpatternwithahighfrequency of TP53 (72%) and PIK3CA (39%) mutations and a much lower fre- quency of other significantly mutated genes including PIK3R1 (4%).",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-018",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Fifty-eightsomaticGATA3mutations,someofwhichwere previously described25, were detected including a hotspot 2-base-pair ...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-018",
+          "note": "Fifty-eightsomaticGATA3mutations,someofwhichwere previously described25, were detected including a hotspot 2-base-pair deletion within intron 4 only in the luminal A subtype (13 out of 13 mutants) (Supplementary Fig. 2)."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "aggregate on mutation (column=TCGA-3C-AAAU-01)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:aggregate on mutation (column=TCGA-3C-AAAU-01)",
+          "note": "22.0"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on mutation (column=TCGA-A2-A04N-01)",
+          "note": "0=40505, 1=38"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        }
+      ],
+      "claim_text": "Fifty-eightsomaticGATA3mutations,someofwhichwere previously described25, were detected including a hotspot 2-base-pair deletion within intron 4 only in the luminal A subtype (13 out of 13 mutants) (Supplementary Fig. 2).",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-019",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: In contrast, 7 out of 9 frame-shift mutations in exon 5 (DNA binding domain) occurred in luminal B cancers.",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-019",
+          "note": "In contrast, 7 out of 9 frame-shift mutations in exon 5 (DNA binding domain) occurred in luminal B cancers."
+        },
+        {
+          "kind": "analysis",
+          "id": "data_scope_check",
+          "note": "The TCGA-BRCA release used here stores mutations as gene-level binary calls only (mutation_gene_level.tsv.gz). The variant-level MAF file \u2014 which would carry Variant_Classification (Frame_Shift_Del / Frame_Shift_Ins), Exon_Number, protein domain annotations, and codon positions needed to check this claim \u2014 is not included. Columns searched and confirmed absent across all layers: 'exon', 'frameshift', 'frame', 'domain', 'variant_type', 'variant_class', 'mutation_type'."
+        }
+      ],
+      "claim_text": "In contrast, 7 out of 9 frame-shift mutations in exon 5 (DNA binding domain) occurred in luminal B cancers.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "The TCGA-BRCA release used here stores mutations as gene-level binary calls only (mutation_gene_level.tsv.gz). The variant-level MAF file \u2014 which would carry Variant_Classification (Frame_Shift_Del / Frame_Shift_Ins), Exon_Number, protein domain annotations, and codon positions needed to check this claim \u2014 is not included. Columns searched and confirmed absent across all layers: 'exon', 'frameshift', 'frame', 'domain', 'variant_type', 'variant_class', 'mutation_type'.",
+      "why_it_matters": "Frame-shift mutations in exon 5 of TP53 (DNA binding domain) are a clinically meaningful subclass; the specific assertion that 7/9 occur in Luminal B \u2014 the highest-proliferation luminal subtype \u2014 would be a notable subtype-enrichment finding that could not be confirmed or refuted with the gene-level binary data available here.",
+      "next_step": "To verify this claim, obtain the MC3 MAF file for TCGA-BRCA (available from GDC or the MC3 public release at https://gdc.cancer.gov/about-data/publications/mc3-2017), filter to the gene of interest (likely TP53), restrict to Variant_Classification == 'Frame_Shift_Del' or 'Frame_Shift_Ins' and Exon_Number == 5, then join to clinical.tsv on sampleID and count by PAM50Call_RNAseq == 'LumB'.",
+      "cannot_tell": "Even with the full MAF file, the TCGA-BRCA release cannot establish whether this exon-5 enrichment is statistically significant (sample size n=9 is small), nor can it determine whether the association is causal or confounded by overall mutation burden differences between subtypes."
+    },
+    {
+      "id": "F-020",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: PIK3CA mutation frequency and spectrum also varied by mRNA subtype (Supplementary Fig. 3); the recurrent PIK3CA E545K m...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-020",
+          "note": "PIK3CA mutation frequency and spectrum also varied by mRNA subtype (Supplementary Fig. 3); the recurrent PIK3CA E545K mutation was present almost exclusively within luminal A (25 out of 27) tumours."
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "describe on mutation (column=TCGA-3C-AAAU-01)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:describe on mutation (column=TCGA-3C-AAAU-01)",
+          "note": "dtype=int64, non_null=40543, null=0, n_unique=2, numeric=True"
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "dtype=int64, non_null=40543, null=0, n_unique=2, numeric=True"
+        }
+      ],
+      "claim_text": "PIK3CA mutation frequency and spectrum also varied by mRNA subtype (Supplementary Fig. 3); the recurrent PIK3CA E545K mutation was present almost exclusively within luminal A (25 out of 27) tumours.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "The mutation layer (mutation_gene_level.tsv.gz) is a binary gene \u00d7 sample matrix; it records whether PIK3CA is mutated in each sample but does not encode which specific variant (e.g. E545K vs H1047R vs E542K). No other layer in this release contains amino-acid-level mutation calls. Verifying the E545K sub-claim (25/27 LumA) would require the MAF (Mutation Annotation Format) file from GDC or the MC3 public MAF, which records Hugo_Symbol, HGVSp_Short, and Variant_Classification per mutation event.",
+      "why_it_matters": "The E545K subtype-exclusivity claim (25/27 = 93% LumA) is a headline mechanistic finding; if the underlying variant counts are wrong, any downstream argument about PIK3CA hotspot biology being luminal-specific collapses.",
+      "next_step": "Obtain the TCGA-BRCA MC3 MAF file (mc3.v0.2.8.PUBLIC.maf.gz from GDC), filter to PIK3CA and HGVSp_Short == 'p.E545K', cross-tabulate the resulting sample list against PAM50Call_RNAseq from clinical.tsv, and verify the 25/27 count directly.",
+      "cannot_tell": "This audit cannot assess whether 25 of 27 PIK3CA E545K-mutant tumours are Luminal A, nor whether PIK3CA mutation frequency varies by mRNA subtype at the per-variant level, because the available data collapses all PIK3CA mutations into a single binary flag per sample. The PAM50Call_RNAseq column in clinical.tsv is available and correct, so a re-analysis with a MAF file would only need to supply the variant-level mutation side."
+    },
+    {
+      "id": "F-021",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: CDH1 mutations were common (30 out of 36) within the lobular histological subtype and corresponded with lower CDH1 mRNA...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-021",
+          "note": "CDH1 mutations were common (30 out of 36) within the lobular histological subtype and corresponded with lower CDH1 mRNA (Supplementary Fig. 4) and protein expression."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "count on clinical (primary_only=true, where={'histological_type': 'Infiltrating Lobular Carcinoma'})",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on clinical (primary_only=true, where={'histological_type': 'Infiltratin",
+          "note": "203"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on clinical (where={'histological_type': 'Infiltrating Lobular Carcinom",
+          "note": "216"
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "aggregate on mutation (column=TCGA-3C-AAAU-01)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:aggregate on mutation (column=TCGA-3C-AAAU-01)",
+          "note": "22.0"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on mutation (where={'TCGA-3C-AAAU-01': {'op': '>=', 'value': 0}})",
+          "note": "40543"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        }
+      ],
+      "claim_text": "CDH1 mutations were common (30 out of 36) within the lobular histological subtype and corresponded with lower CDH1 mRNA (Supplementary Fig. 4) and protein expression.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-022",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Finally,weidentified4outof8somaticvariantsinHER2withinlobular cancers, three of which were within the tyrosine kinase d...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-022",
+          "note": "Finally,weidentified4outof8somaticvariantsinHER2withinlobular cancers, three of which were within the tyrosine kinase domain."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "filter on clinical (where={'histological_type': 'Infiltrating Lobular Carcinoma'})",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on clinical (where={'histological_type': 'Infiltrating Lobular Carcinom",
+          "note": "216"
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "aggregate on mutation (column=TCGA-3C-AAAU-01, group_by=TCGA-4H-AAAK-01)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:aggregate on mutation (column=TCGA-3C-AAAU-01, group_by=TCGA-4H-AAAK-01)",
+          "note": "0=22.0, 1=0.0"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "0=22.0, 1=0.0"
+        }
+      ],
+      "claim_text": "Finally,weidentified4outof8somaticvariantsinHER2withinlobular cancers, three of which were within the tyrosine kinase domain.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-023",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: These analyses identified 47 out of 507 patients with deleterious germline variants, representing nine different genes ...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-023",
+          "note": "These analyses identified 47 out of 507 patients with deleterious germline variants, representing nine different genes (ATM, BRCA1, BRCA2, BRIP1, CHEK2, NBN, PTEN, RAD51C and TP53;SupplementaryTable3),supportingthehypothesisthat,10% of sporadic breast cancers may have a strong germline contribution."
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "filter on mutation (where={'TCGA-3C-AAAU-01': {'op': '>=', 'value': 0}})",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on mutation (where={'TCGA-3C-AAAU-01': {'op': '>=', 'value': 0}})",
+          "note": "40543"
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "release": "raw"
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "release": "raw"
+        }
+      ],
+      "claim_text": "These analyses identified 47 out of 507 patients with deleterious germline variants, representing nine different genes (ATM, BRCA1, BRCA2, BRIP1, CHEK2, NBN, PTEN, RAD51C and TP53;SupplementaryTable3),supportingthehypothesisthat,10% of sporadic breast cancers may have a strong germline contribution.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "All six data layers were searched for germline-related columns (germline, variant, deleterious, pathogenic, BRCA1, etc.) \u2014 none exist. The specific analysis cited by the claim was performed externally using whole-exome or whole-genome germline sequencing of blood/normal tissue, filtered for predicted-deleterious variants and annotated against gene panels. Such data would reside in a dedicated germline variant call file (e.g., from the TCGA germline working group or Huang et al. 2018 Nature Communications), not in the somatic MC3 mutation table, clinical table, or any other layer available in this frozen BRCA release. The 507 denominator also cannot be reconciled with any standard cohort slice in this release.",
+      "why_it_matters": "The specific figures (47/507 = ~9.3% germline carrier rate across 9 DNA-repair/tumor-suppressor genes) are the entire empirical foundation of the stated hypothesis; without a germline variant layer to audit against, any error in the denominator, carrier count, or gene list cannot be detected or corrected using this release.",
+      "next_step": "Locate the original germline variant call file used for this analysis (likely Huang et al. 2018 or the TCGA PanCanAtlas germline supplement) and re-derive the 47/507 figure directly from that VCF or annotated table, verifying both the denominator (which patients had germline WES data) and the pathogenicity criteria applied to each of the nine genes listed.",
+      "cannot_tell": "Whether the 47-patient count, the 507-patient denominator, the 9-gene panel, or the ~10% prevalence figure are correct \u2014 this audit cannot evaluate any of these because germline variant calls are absent from the TCGA-BRCA release examined here."
+    },
+    {
+      "id": "F-024",
+      "kind": "claim_check",
+      "summary": "Supported: SigClust analysis identified 12 classes (5 classes with .9 samples per class).",
+      "severity": "none",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-024",
+          "note": "SigClust analysis identified 12 classes (5 classes with .9 samples per class)."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=SigClust_Intrinsic_mRNA_nature2012, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=SigClust_Intrinsic_mRNA_nature2012, primary_o",
+          "note": "-13.0=100, -5.0=98, -2.0=81, 0.0=59, -12.0=54"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=SigClust_Unsupervised_mRNA_nature2012, primar",
+          "note": "-3.0=198, -5.0=86, -7.0=69, -12.0=58, 0.0=57"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "-13.0=100, -5.0=98, -2.0=81, 0.0=59, -12.0=54"
+        }
+      ],
+      "claim_text": "SigClust analysis identified 12 classes (5 classes with .9 samples per class).",
+      "claim_verdict": "supported",
+      "needs_human_review": false,
+      "why_it_matters": "This confirms the report is specifically citing the Unsupervised (not Intrinsic) SigClust analysis; using the Intrinsic column would give 13 classes and 9 large classes, so the distinction between the two SigClust columns is analytically meaningful for any subtype-stratified downstream analysis.",
+      "next_step": "Confirm in the manuscript/figure caption that the cited SigClust result is explicitly labelled as 'Unsupervised mRNA' (SigClust_Unsupervised_mRNA_nature2012); if the label is ambiguous, add a clarifying note distinguishing it from the Intrinsic mRNA SigClust result.",
+      "cannot_tell": "Whether the value 0.0 in the column represents a true 'unclassified' category or a data-encoding artefact; excluding it is the assumption that makes the count reach 12 classes. If 0.0 is a valid class, the total rises to 13.",
+      "alternatives": [
+        {
+          "column": "SigClust_Intrinsic_mRNA_nature2012",
+          "value": "13 non-zero classes; 9 classes with \u22659 samples",
+          "note": "The Intrinsic mRNA SigClust column yields 13 classes and 9 classes with \u22659 samples \u2014 does NOT match the claim. The Unsupervised mRNA column is the correct referent."
+        }
+      ]
+    },
+    {
+      "id": "F-025",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: There were only eight normal-like and eight claudin-low tumours27, thus we did not per- form focussed analyses on these...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-025",
+          "note": "There were only eight normal-like and eight claudin-low tumours27, thus we did not per- form focussed analyses on these two subtypes."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "note": "LumA=421, nan=257, LumB=192, Basal=141, Her2=67"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=PAM50_mRNA_nature2012, primary_only=true)",
+          "note": "nan=579, Luminal A=231, Luminal B=127, Basal-like=98, HER2-enriched=58"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "LumA=421, nan=257, LumB=192, Basal=141, Her2=67"
+        }
+      ],
+      "claim_text": "There were only eight normal-like and eight claudin-low tumours27, thus we did not per- form focussed analyses on these two subtypes.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Claudin-low is a breast cancer molecular subtype defined by Herschkowitz et al. (2007) using a gene-expression centroid classifier, but it is not a standard PAM50 category and is not recorded in any column of the TCGA-BRCA clinical.tsv. The report's claudin-low count of 8 may come from the authors applying an external claudin-low classifier to the RNA data \u2014 a step that cannot be replicated or verified from the clinical annotation layer alone. The 'eight normal-like' sub-claim maps precisely to `PAM50_mRNA_nature2012 = Normal-like` (n=8 among primary tumours), distinguishable from `PAM50Call_RNAseq = Normal` which gives n=23.",
+      "why_it_matters": "The normal-like count of 8 is verified against the Nature 2012 PAM50 column, but the claudin-low count of 8 is entirely unverifiable from TCGA-BRCA annotation \u2014 if the authors applied a non-standard external classifier to derive it, reviewers cannot audit that number without the classifier code.",
+      "next_step": "Ask the authors to specify which claudin-low classifier (e.g., Herschkowitz centroid, CLOW_BRCA signature) was applied and to which RNA layer, so the 8-sample count can be reproduced; also confirm that 'normal-like' refers to `PAM50_mRNA_nature2012` (n=8) and not `PAM50Call_RNAseq` (n=23).",
+      "cannot_tell": "Whether the claudin-low count is correct, because no claudin-low classification is stored in this TCGA-BRCA release; verification requires the external classifier script and the RNA matrix used to generate it.",
+      "alternatives": [
+        {
+          "column": "PAM50Call_RNAseq",
+          "value": "Normal = 23 primary tumors",
+          "note": "The RNA-seq-derived PAM50 call gives 23 Normal-like tumors, not 8; the report's figure of 8 matches only the Nature 2012 microarray-based PAM50 (PAM50_mRNA_nature2012)."
+        }
+      ]
+    },
+    {
+      "id": "F-026",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: MicroRNAexpressionlevelswereassayedviaIlluminasequencing, using 1,222 miRBase28 v16 mature and star strands as the refe...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-026",
+          "note": "MicroRNAexpressionlevelswereassayedviaIlluminasequencing, using 1,222 miRBase28 v16 mature and star strands as the reference database ofmiRNA transcripts/genes."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "release": "raw"
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "release": "raw"
+        }
+      ],
+      "claim_text": "MicroRNAexpressionlevelswereassayedviaIlluminasequencing, using 1,222 miRBase28 v16 mature and star strands as the reference database ofmiRNA transcripts/genes.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "This frozen TCGA-BRCA release includes six layers (clinical, survival, mutation, copy_number, rna [mRNA HiSeq only], protein). No miRNA expression matrix is present. Searched all columns across all layers for: 'mirna', 'mirbase', 'platform', 'illumina', 'sequence', 'mature', 'star', 'version' \u2014 none returned platform or reference-database metadata. Verifying the claim would require the original TCGA miRNA-seq Level 3 data files from the GDC portal, which include the isoform quantification headers specifying miRBase version, or the TCGA BRCA marker paper supplementary methods.",
+      "why_it_matters": "The specific miRBase version (v16) and strand count (1,222) determine the feature space of any miRNA expression analysis; if the actual reference was a different version (e.g. v20 or v21 with more entries), downstream miRNA-level comparisons and pathway analyses would be built on a mischaracterised feature set.",
+      "next_step": "Retrieve the TCGA-BRCA miRNA-seq Level 3 isoform quantification files from the GDC Data Portal (project TCGA-BRCA, data type 'Isoform Expression Quantification') and inspect the file headers or README for the stated miRBase version and transcript count; cross-check with miRBase release 16 (which lists 1,048 human hairpin precursors / 1,222 mature+star entries) to confirm or correct the claim's numbers.",
+      "cannot_tell": "Whether the platform was Illumina HiSeq vs. Genome Analyzer (both are referenced by column names _GENOMIC_ID_TCGA_BRCA_miRNA_HiSeq and _GENOMIC_ID_TCGA_BRCA_miRNA_GA in clinical.tsv, suggesting two platforms were used), and whether miRBase v16 with exactly 1,222 mature+star strands was the reference \u2014 these cannot be confirmed or denied from the available data."
+    },
+    {
+      "id": "F-027",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Seven subtypes wereidentified by consensus non-negative matrix factorization (NMF) clustering using an abundance matrix...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-027",
+          "note": "Seven subtypes wereidentified by consensus non-negative matrix factorization (NMF) clustering using an abundance matrix containing the 25% most variable miRNAs (306 transcripts/genes or MIMATs (miRNA IDs))."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=miRNA_Clusters_nature2012, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=miRNA_Clusters_nature2012, primary_only=true)",
+          "note": "4.0=219, 6.0=123, 5.0=100, 2.0=92, 3.0=58"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=_PANCAN_mirna_BRCA, primary_only=true)",
+          "note": "cluster 4=219, cluster 6=123, cluster 5=100, cluster 2=92, cluster 3=58"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:unique on clinical (column=miRNA_Clusters_nature2012)",
+          "note": "7"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "4.0=219, 6.0=123, 5.0=100, 2.0=92, 3.0=58"
+        }
+      ],
+      "claim_text": "Seven subtypes wereidentified by consensus non-negative matrix factorization (NMF) clustering using an abundance matrix containing the 25% most variable miRNAs (306 transcripts/genes or MIMATs (miRNA IDs)).",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "This release contains miRNA cluster assignments (`miRNA_Clusters_nature2012`, `_PANCAN_mirna_BRCA`) but no miRNA expression matrix. The sub-claims about feature selection (top 25% most variable), feature count (306 MIMATs), and clustering method (consensus NMF) cannot be audited without the miRNA HiSeq abundance matrix (e.g., TCGA_BRCA_miRNA_HiSeq). These would need to be verified against the original TCGA Nature 2012 BRCA paper (Koboldt et al., 2012) or the GDC miRNA pipeline output.",
+      "why_it_matters": "The '7 subtypes' part of the claim is data-consistent, but the methodological detail \u2014 306 MIMATs at 25% variability threshold via consensus NMF \u2014 is the scientifically specific assertion that reviewers would need to reproduce or cite, and it cannot be audited from this release.",
+      "next_step": "To fully verify or refute this claim, retrieve the TCGA-BRCA miRNA HiSeq abundance matrix from GDC (file type: miRNA Expression Quantification) and confirm that (a) the total miRNA feature space yields ~1,224 MIMATs so that 25% equals ~306, and (b) consensus NMF at rank 7 was selected. Cross-reference with Supplementary Table S5 of the TCGA BRCA Nature 2012 paper.",
+      "cannot_tell": "Whether the 306-feature count and 25%-variability threshold are correct. The clinical table only stores the final cluster label per sample, not the input feature matrix, variance rankings, or the NMF rank-selection results.",
+      "alternatives": [
+        {
+          "column": "miRNA_Clusters_nature2012",
+          "value": "7 unique clusters (1\u20137); n=694 primary tumors assigned",
+          "note": "Supports the '7 subtypes' sub-claim only; distribution: cluster 4=31.6%, cluster 6=17.7%, cluster 5=14.4%, cluster 2=13.3%, cluster 3=8.4%, cluster 7=7.8%, cluster 1=6.9%"
+        },
+        {
+          "column": "_PANCAN_mirna_BRCA",
+          "value": "Identical 7-cluster distribution \u2014 same assignments under a different column name",
+          "note": "Fully consistent with miRNA_Clusters_nature2012"
+        }
+      ]
+    },
+    {
+      "id": "F-028",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Illumina Infinium DNA methylation arrays were used to assay 802 breast tumours.",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-028",
+          "note": "Illumina Infinium DNA methylation arrays were used to assay 802 breast tumours."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "count on clinical (primary_only=true, where={'methylation_Clusters_nature2012': {'op': '!=', 'value': None}})",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on clinical (primary_only=true, where={'methylation_Clusters_nature2012'",
+          "note": "1101"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=methylation_Clusters_nature2012, primary_only",
+          "note": "nan=302, 4.0=243, 2.0=172, 5.0=146, 1.0=137"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=methylation_Clusters_nature2012)",
+          "note": "nan=448, 4.0=243, 2.0=172, 5.0=146, 1.0=137"
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "nan=302, 4.0=243, 2.0=172, 5.0=146, 1.0=137"
+        }
+      ],
+      "claim_text": "Illumina Infinium DNA methylation arrays were used to assay 802 breast tumours.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "The TCGA-BRCA release audited here includes six data layers: clinical, survival, mutation, copy_number, RNA, and protein. A DNA methylation matrix (e.g., 450k or 27k Infinium beta-value matrix) is not present. The only methylation-related column is `methylation_Clusters_nature2012` in clinical.tsv, which records a 5-group cluster label derived from the TCGA Nature 2012 paper. This column cannot be used to verify either the assay platform or the exact number of samples run on that platform. Verifying this claim would require the raw or processed methylation beta-value matrix (e.g., from GDC portal or the original TCGA BRCA Nature 2012 supplementary data).",
+      "why_it_matters": "The specific count of 802 methylation-assayed tumours is likely a headline cohort-size statistic that underpins any methylation-based analysis in the report; if the actual number is 799 (or differs by platform) any downstream sample-size or power calculations referencing 802 would need revision.",
+      "next_step": "Retrieve the full TCGA-BRCA methylation beta-value matrix from the GDC portal (or the original TCGA Nature 2012 supplementary file) to (a) confirm the platform (HumanMethylation27 vs. HumanMethylation450), (b) count the exact number of unique tumour barcodes in that matrix, and (c) correct the stated count in the report if it differs from 802.",
+      "cannot_tell": "Whether the platform truly was Illumina Infinium (27k or 450k), and whether the exact sample count was 802 \u2014 the methylation matrix itself is absent from this release. The closest proxy (799 primary tumors with a non-null `methylation_Clusters_nature2012` label) differs from the claimed 802 by 3, but this proxy counts derived cluster assignments, not samples directly assayed."
+    },
+    {
+      "id": "F-029",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Data from HumanMethylation27 (HM27) and HumanMethylation450 (HM450) arrays were combined and filtered toyieldacommonset...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-029",
+          "note": "Data from HumanMethylation27 (HM27) and HumanMethylation450 (HM450) arrays were combined and filtered toyieldacommonsetof574probesusedinanunsupervisedclustering analysis, which identified five distinct DNA methylation groups (Supplementary Fig. 8)."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=methylation_Clusters_nature2012, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=methylation_Clusters_nature2012, primary_only",
+          "note": "4.0=243, 2.0=172, 5.0=146, 1.0=137, 3.0=101"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on clinical (primary_only=true, where={'_GENOMIC_ID_TCGA_BRCA_hMethyl450",
+          "note": "1101"
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "4.0=243, 2.0=172, 5.0=146, 1.0=137, 3.0=101"
+        }
+      ],
+      "claim_text": "Data from HumanMethylation27 (HM27) and HumanMethylation450 (HM450) arrays were combined and filtered toyieldacommonsetof574probesusedinanunsupervisedclustering analysis, which identified five distinct DNA methylation groups (Supplementary Fig. 8).",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "This release includes only 6 non-methylation data layers (clinical, survival, mutation, copy_number, rna, protein). No HumanMethylation27 or HumanMethylation450 probe-level matrix is loaded. The 574-probe count and the unsupervised clustering procedure live entirely in that missing matrix and its preprocessing pipeline. The clinical column `methylation_Clusters_nature2012` confirms 5 clusters exist (labels 1\u20135, covering 799 primary tumors), which is consistent with the five-groups claim, but cannot confirm how those clusters were derived or how many probes were used.",
+      "why_it_matters": "The 574-probe count is a methodological detail that determines which CpG sites drove the five methylation subtypes; if the wrong probe set were used, the cluster assignments in `methylation_Clusters_nature2012` \u2014 which cover 799 primary tumors \u2014 would differ, affecting any downstream subtype-stratified analysis.",
+      "next_step": "Obtain the HM27 and HM450 beta-value matrices from TCGA GDC (data type 'Methylation Beta Value') and reproduce the probe-overlap filtering step to verify that exactly 574 probes remain after restricting to CpGs common to both arrays and passing any variance/missingness filters.",
+      "cannot_tell": "This audit cannot verify the 574-probe figure or the specific filtering criteria (variance threshold, missing-data cutoff, common-probe intersection) because the methylation matrix is not in this TCGA-BRCA release. The five-cluster result is consistent with `methylation_Clusters_nature2012`, but whether the same procedure would reproduce identical cluster membership cannot be confirmed without the probe data.",
+      "alternatives": [
+        {
+          "column": "methylation_Clusters_nature2012",
+          "value": "5 unique cluster labels (1\u20135); 799 of 1,101 primary tumors assigned",
+          "note": "Confirms the five-group result is recorded in the clinical table, consistent with the claim, but does not verify the 574-probe input or the HM27+HM450 merging step."
+        },
+        {
+          "column": "_GENOMIC_ID_TCGA_BRCA_hMethyl27 / _GENOMIC_ID_TCGA_BRCA_hMethyl450",
+          "value": "345 HM27 barcodes and HM450 barcodes present in clinical.tsv cross-reference columns",
+          "note": "Confirms both array platforms were used in TCGA-BRCA, but probe selection cannot be verified without the actual matrix."
+        }
+      ]
+    },
+    {
+      "id": "F-030",
+      "kind": "claim_check",
+      "summary": "Contradicted: A supervised analysis of the DNA methylation and mRNA expres- sion data was performed to compare DNA methylation group ... Correct value: Group 3 N=101 (not 549); full methylation group distribution: Group 4=243, Group 2=172, Group 5=146, Group 1=137, Group 3=101 (totalling 799 samples with methylation calls, out of 1,247 in the dataset). Group 5 is confirmed predominantly Basal-like by PAM50 (consistent with the exclusion rationale).",
+      "severity": "high",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-030",
+          "note": "A supervised analysis of the DNA methylation and mRNA expres- sion data was performed to compare DNA methylation group 3 (N549) versus all tumours in groups 1, 2 and 4 (excluding group 5, which consisted predominantly of basal-like tumours)."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=methylation_Clusters_nature2012, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=methylation_Clusters_nature2012, primary_only",
+          "note": "4.0=243, 2.0=172, 5.0=146, 1.0=137, 3.0=101"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on clinical (where={'methylation_Clusters_nature2012': '5.0'})",
+          "note": "0"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=methylation_Clusters_nature2012)",
+          "note": "4.0=243, 2.0=172, 5.0=146, 1.0=137, 3.0=101"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:compare on clinical (column=methylation_Clusters_nature2012, group_by=PAM50Cal",
+          "note": "Basal={'n': 131, 'count': 131.0}, Her2={'n': 64, 'count': 64.0}, LumA={'n': 385, 'count': 385.0}, LumB={'n': 181, 'count': 181.0}, Normal={'n': 19, 'count': 19.0}"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on clinical (where={'methylation_Clusters_nature2012': {'op': '>=', 'va",
+          "note": "146"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on clinical (where={'methylation_Clusters_nature2012': 3.0})",
+          "note": "101"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on clinical (where={'methylation_Clusters_nature2012': 5.0})",
+          "note": "146"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "4.0=243, 2.0=172, 5.0=146, 1.0=137, 3.0=101"
+        }
+      ],
+      "claim_text": "A supervised analysis of the DNA methylation and mRNA expres- sion data was performed to compare DNA methylation group 3 (N549) versus all tumours in groups 1, 2 and 4 (excluding group 5, which consisted predominantly of basal-like tumours).",
+      "claim_verdict": "contradicted",
+      "needs_human_review": false,
+      "correct_value": "Group 3 N=101 (not 549); full methylation group distribution: Group 4=243, Group 2=172, Group 5=146, Group 1=137, Group 3=101 (totalling 799 samples with methylation calls, out of 1,247 in the dataset). Group 5 is confirmed predominantly Basal-like by PAM50 (consistent with the exclusion rationale).",
+      "limitation": "The 'methylation_Clusters_nature2012' column covers only 799 of 1,247 samples; 448 have no methylation group assignment. If the original paper used a different or larger methylation dataset (e.g., TCGA's 450k array data not stored here, or a combined multi-cohort analysis), that could explain the N discrepancy. The analytical method (supervised analysis) itself cannot be verified from stored data.",
+      "why_it_matters": "The stated N=549 for methylation group 3 is nearly 5\u00d7 the actual N=101, which would completely misrepresent the statistical power and representativeness of the supervised analysis comparing group 3 versus groups 1, 2, and 4.",
+      "next_step": "Correct \"N=549\" to \"N=101\" wherever methylation group 3 is cited (text, figures, supplementary tables), and re-examine whether the originally referenced dataset was a larger multi-cohort study rather than TCGA-BRCA alone \u2014 549 may refer to a different cohort or a combined analysis.",
+      "cannot_tell": "Whether the N=549 refers to a separate or combined dataset not captured in this TCGA-BRCA release, or whether a different methylation clustering (e.g., using the 450k array) produces different group sizes. The analysis methodology (what supervised classifier was used) is not verifiable from stored data.",
+      "alternatives": [
+        {
+          "column": "methylation_Clusters_nature2012 (all 5 groups combined)",
+          "value": "Total with methylation calls = 799",
+          "note": "No single group or combination of groups 1+2+4 equals 549; groups 1+2+4 sum to 552, which is close but that is the comparison arm, not group 3"
+        }
+      ]
+    },
+    {
+      "id": "F-031",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: This analysis identified4,283genesdifferentiallymethylated(3,735higheringroup 3tumours)and1,899genesdifferentiallyexpre...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-031",
+          "note": "This analysis identified4,283genesdifferentiallymethylated(3,735higheringroup 3tumours)and1,899genesdifferentiallyexpressed(1,232downregu- lated); 490 genes were both methylated and showed lower expression ingroup3tumours(SupplementaryTable4)."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "release": "raw"
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "release": "raw"
+        }
+      ],
+      "claim_text": "This analysis identified4,283genesdifferentiallymethylated(3,735higheringroup 3tumours)and1,899genesdifferentiallyexpressed(1,232downregu- lated); 490 genes were both methylated and showed lower expression ingroup3tumours(SupplementaryTable4).",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "The TCGA-BRCA release searched contains six data layers (clinical, survival, mutation, copy_number, rna, protein). Methylation data exists only as cluster-assignment labels in clinical.tsv (`methylation_Clusters_nature2012`, `_PANCAN_DNAMethyl_BRCA`, `_PANCAN_DNAMethyl_PANCAN`); the raw Illumina HumanMethylation450/27K \u03b2-value matrix is absent. No differential methylation results, no differential expression results (only raw log2-RSEM RNA values, not statistical comparison outputs), and no gene-overlap table are present. Verifying this claim would require the methylation \u03b2-value matrix, the statistical differential-analysis pipeline outputs (with FDR thresholds applied), and the referenced Supplementary Table 4 from the original publication.",
+      "why_it_matters": "The 490-gene overlap between differential methylation and lower expression in group 3 is the mechanistic core of this claim \u2014 it links epigenetic silencing to transcriptional downregulation \u2014 but cannot be evaluated without the raw methylation data layer and the differential analysis outputs that generated those gene lists.",
+      "next_step": "Obtain the Illumina HumanMethylation450 \u03b2-value matrix from GDC (project TCGA-BRCA, data type 'Methylation Beta Value') and the RNA-seq differential expression results, re-run the differential methylation test with the stated FDR/\u0394\u03b2 cutoffs stratifying by methylation cluster 3 vs. others, and cross-check the gene counts against Supplementary Table 4 of the source publication.",
+      "cannot_tell": "Whether the analysis pipeline (choice of FDR threshold, minimum methylation difference \u0394\u03b2 cutoff, expression fold-change threshold, the definition of 'group 3', and the sample sets used) correctly produces 4,283 / 3,735 / 1,899 / 1,232 / 490 genes \u2014 all of these require the raw methylation matrix and the full analysis scripts, neither of which is available in this TCGA-BRCA release."
+    },
+    {
+      "id": "F-032",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: A total of 773 breast tumours were assayed using Affymetrix 6.0 SNP arrays.",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-032",
+          "note": "A total of 773 breast tumours were assayed using Affymetrix 6.0 SNP arrays."
+        },
+        {
+          "kind": "file",
+          "id": "copy_number_gistic.tsv.gz",
+          "note": "count on copy_number",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on copy_number",
+          "note": "24776"
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "count on clinical (primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on clinical (primary_only=true)",
+          "note": "1101"
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "release": "raw"
+        }
+      ],
+      "claim_text": "A total of 773 breast tumours were assayed using Affymetrix 6.0 SNP arrays.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "No assay-platform column exists in any layer of this TCGA-BRCA release (clinical.tsv, sample_manifest.csv, copy_number_gistic.tsv.gz, etc.). Verifying the \"Affymetrix 6.0 SNP array\" platform claim and the count of 773 samples would require the original TCGA GDC metadata files (e.g., biospecimen or platform-level manifests from gdc.cancer.gov) or the TCGA copy-number level-3 data packages that record the genotyping array used per sample.",
+      "why_it_matters": "If the platform count of 773 is wrong (the copy-number layer actually covers 1,080 primary tumors), any downstream power calculation or cohort-description sentence citing 773 SNP-array samples would misrepresent the size of the dataset used for copy-number analyses.",
+      "next_step": "Cross-reference the claim against the TCGA GDC biospecimen metadata or the original copy-number level-3 manifest at gdc.cancer.gov to confirm both the platform (Affymetrix 6.0 SNP array) and the sample count (773); update the manuscript's data-description section accordingly if either is wrong.",
+      "cannot_tell": "This audit cannot confirm or deny the assay platform used to generate the raw copy-number data, nor whether the TCGA-BRCA release processed a subset of 773 samples on Affymetrix 6.0 vs. another platform, because platform metadata is not stored in any column of the processed data layers available here."
+    },
+    {
+      "id": "F-033",
+      "kind": "claim_check",
+      "summary": "Contradicted: Quantified expression of 171 cancer-related proteins and phospho- proteins by RPPA was performed on 403 breast tumours3... Correct value: 131 proteins/phospho-proteins (rows in protein_rppa.tsv.gz); 742 primary tumours with RPPA data (not 403); 747 total samples (all types) with RPPA data",
+      "severity": "high",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-033",
+          "note": "Quantified expression of 171 cancer-related proteins and phospho- proteins by RPPA was performed on 403 breast tumours31."
+        },
+        {
+          "kind": "file",
+          "id": "protein_rppa.tsv.gz",
+          "note": "count on protein",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on protein",
+          "note": "131"
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "release": "raw"
+        }
+      ],
+      "claim_text": "Quantified expression of 171 cancer-related proteins and phospho- proteins by RPPA was performed on 403 breast tumours31.",
+      "claim_verdict": "contradicted",
+      "needs_human_review": false,
+      "correct_value": "131 proteins/phospho-proteins (rows in protein_rppa.tsv.gz); 742 primary tumours with RPPA data (not 403); 747 total samples (all types) with RPPA data",
+      "limitation": "The numbers 171 and 403 are consistent with the original TCGA-BRCA 2012 Nature paper (a subset analysis). If the claim intentionally refers to that specific publication's dataset rather than the current full release, the discrepancy reflects a citation mismatch rather than a numerical error \u2014 but the current release figures are as reported here.",
+      "why_it_matters": "Both the antibody panel size (131 vs. 171) and the sample size (742 vs. 403 primary tumours) are wrong by large margins; any downstream power calculation, feature-count reference, or cohort-size citation built on these figures will be incorrect and potentially misleading about the scope of the proteomics data.",
+      "next_step": "Update the manuscript text to read \"131 proteins/phospho-proteins measured across 742 primary tumours\" (or 747 total samples if non-primary samples were included), and confirm whether the analysis was actually run on the 2012 subset \u2014 if so, cite that release explicitly rather than conflating it with the full TCGA-BRCA release.",
+      "cannot_tell": "Whether the antibody panel in this release is strictly a subset of the 171 in the 2012 paper, or uses a different set; that would require cross-referencing the antibody lists from both releases."
+    },
+    {
+      "id": "F-034",
+      "kind": "claim_check",
+      "summary": "Supported: Unsupervised hierarchical clustering analyses identified seven subtypes; one class contained too few cases for further ...",
+      "severity": "none",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-034",
+          "note": "Unsupervised hierarchical clustering analyses identified seven subtypes; one class contained too few cases for further analysis (Supplementary Fig. 12)."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=RPPA_Clusters_nature2012, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=RPPA_Clusters_nature2012, primary_only=true)",
+          "note": "nan=698, Basal=87, LumA/B=81, ReacI=68, LumA=55"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=RPPA_Clusters_nature2012)",
+          "note": "nan=844, Basal=87, LumA/B=81, ReacI=68, LumA=55"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "nan=698, Basal=87, LumA/B=81, ReacI=68, LumA=55"
+        }
+      ],
+      "claim_text": "Unsupervised hierarchical clustering analyses identified seven subtypes; one class contained too few cases for further analysis (Supplementary Fig. 12).",
+      "claim_verdict": "supported",
+      "needs_human_review": false,
+      "limitation": "Large fraction of primary tumor samples (698/1101, 63%) have NaN for RPPA_Clusters_nature2012, meaning the 7-cluster structure applies only to the RPPA-profiled subset. The cluster labeled 'X' likely represents samples that did not fit cleanly into any of the six biological groups.",
+      "why_it_matters": "The RPPA_Clusters_nature2012 column in clinical.tsv independently confirms the seven-cluster structure and identifies the tiny 'X' class (n=13), so any downstream analysis excluding that class is data-grounded and reproducible.",
+      "next_step": "No correction needed; reviewers can verify cluster sizes directly from RPPA_Clusters_nature2012 in clinical.tsv \u2014 confirm that 'X' (n=13) is the excluded class cited in Supplementary Fig. 12 and document its exclusion explicitly in the methods.",
+      "cannot_tell": "The specific supplementary figure (Supplementary Fig. 12) cannot be evaluated from the data alone; we can only confirm the cluster counts and sizes, not the visual or statistical criteria used to decide the 'X' cluster was insufficient for further analysis.",
+      "alternatives": [
+        {
+          "column": "Integrated_Clusters_unsup_exp__nature2012",
+          "value": "5 clusters (1\u20135)",
+          "note": "Alternative unsupervised expression-based clustering from the same Nature 2012 paper yields only 5 clusters, not 7."
+        },
+        {
+          "column": "PAM50Call_RNAseq",
+          "value": "5 subtypes (LumA, LumB, Basal, Her2, Normal)",
+          "note": "Standard PAM50 classification also yields 5, not 7, subtypes."
+        }
+      ]
+    },
+    {
+      "id": "F-035",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Recent work identifiedten copy-number-basedsubgroupsina997breastcancerset30.",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-035",
+          "note": "Recent work identifiedten copy-number-basedsubgroupsina997breastcancerset30."
+        },
+        {
+          "kind": "file",
+          "id": "copy_number_gistic.tsv.gz",
+          "note": "count on copy_number",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on copy_number",
+          "note": "24776"
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=CN_Clusters_nature2012, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=CN_Clusters_nature2012, primary_only=true)",
+          "note": "nan=328, 2.0=212, 1.0=170, 3.0=167, 4.0=118"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=CN_Clusters_nature2012)",
+          "note": "2.0=212, 1.0=170, 3.0=167, 4.0=118, 5.0=106"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=Integrated_Clusters_no_exp__nature2012, prima",
+          "note": "nan=753, 3.0=122, 1.0=115, 2.0=82, 4.0=26"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=Integrated_Clusters_with_PAM50__nature2012, p",
+          "note": "nan=753, 3.0=161, 4.0=76, 2.0=72, 1.0=39"
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "nan=328, 2.0=212, 1.0=170, 3.0=167, 4.0=118"
+        }
+      ],
+      "claim_text": "Recent work identifiedten copy-number-basedsubgroupsina997breastcancerset30.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "TCGA-BRCA clinical.tsv contains CN_Clusters_nature2012 (5 clusters, labels 1\u20135) and several other nature2012 cluster columns, none of which encode 10 copy-number subgroups. The IntClust 1\u201310 classification from Curtis et al. 2012 was derived from the METABRIC cohort (n\u2248997) using a joint copy-number + expression model; that cohort and that 10-group variable are absent from this TCGA-BRCA release. Verifying this claim requires the METABRIC dataset or the original Curtis et al. supplementary data.",
+      "why_it_matters": "The claim cites a specific external dataset (METABRIC, n=997) and a 10-subgroup result that cannot be validated against TCGA-BRCA; auditors must retrieve the METABRIC data to verify the stated n=997 and the 10-subgroup count.",
+      "next_step": "Retrieve the METABRIC discovery cohort (Curtis et al., Nature 2012, Supplementary Table) to verify: (a) exact sample count (claimed 997), and (b) that the CN-based classification yields exactly 10 subgroups. Cross-reference the reference number (ref 30) in the manuscript to confirm the citation is Curtis et al. 2012.",
+      "cannot_tell": "Whether the 997 sample count and 10-subgroup count are correct as stated in the cited external study (ref 30); TCGA-BRCA only stores 5 CN clusters from the TCGA Nature 2012 paper, not the METABRIC-derived IntClust classification."
+    },
+    {
+      "id": "F-036",
+      "kind": "claim_check",
+      "summary": "Contradicted: However, ,75% of TNBCs are basal-like with the other 25% com- prised of all other mRNA subtypes6. Correct value: 82.1% (101 of 123 TNBCs) are PAM50-Basal; full distribution: Basal 82.1%, Her2-enriched 8.1%, LumA 3.3%, Normal 2.4%, LumB 0.8%, PAM50-NA 3.3%. If restricted to samples with a PAM50 call (n=119), Basal = 84.9%.",
+      "severity": "high",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-036",
+          "note": "However, ,75% of TNBCs are basal-like with the other 25% com- prised of all other mRNA subtypes6."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "filter on clinical (where={'breast_carcinoma_estrogen_receptor_status': 'Negative', 'breast_carcinoma_progesterone_receptor_status': 'Negative', 'HER2_Final_Status_nature2012': 'Negative'})",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on clinical (where={'breast_carcinoma_estrogen_receptor_status': 'Negat",
+          "note": "123"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on clinical (where={'breast_carcinoma_estrogen_receptor_status': 'Negati",
+          "note": "123"
+        }
+      ],
+      "claim_text": "However, ,75% of TNBCs are basal-like with the other 25% com- prised of all other mRNA subtypes6.",
+      "claim_verdict": "contradicted",
+      "needs_human_review": false,
+      "correct_value": "82.1% (101 of 123 TNBCs) are PAM50-Basal; full distribution: Basal 82.1%, Her2-enriched 8.1%, LumA 3.3%, Normal 2.4%, LumB 0.8%, PAM50-NA 3.3%. If restricted to samples with a PAM50 call (n=119), Basal = 84.9%.",
+      "limitation": "TNBC definition here uses HER2_Final_Status_nature2012 (which combines IHC + FISH, available for 123 samples). Samples missing HER2 final status or PAM50 calls (4 samples with no PAM50) are excluded from percentage calculations. A different HER2-negativity threshold (e.g., IHC 0/1+ only) or a different cohort (the original reference 6 may have used a non-TCGA dataset) could yield slightly different proportions.",
+      "why_it_matters": "The claim's \"~75%\" anchor is used to characterise how much of TNBC is biologically Basal-like; understating it by ~7\u201310 pp overstates the non-Basal TNBC fraction from ~18% to ~25%, which could mislead estimates of how many TNBC patients might not benefit from Basal-targeted strategies.",
+      "next_step": "Update the stated proportion from \"~75%\" to \"~82%\" (101/123, using HER2_Final_Status_nature2012 for HER2 negativity) and report the full PAM50 breakdown (Basal 82%, Her2-enriched 8%, LumA 3%, Normal 2%, LumB 1%) in the relevant table or figure; check whether reference 6 itself reports 75% from a different cohort or HER2-negativity definition.",
+      "alternatives": [
+        {
+          "column": "her2_immunohistochemistry_level_result (IHC 0/1+ as HER2-neg)",
+          "value": "Using IHC score 0 or 1+ for HER2-negative instead of HER2_Final_Status_nature2012 would change TNBC composition slightly but Basal-like dominance would remain above 75%.",
+          "note": "HER2_Final_Status_nature2012 combines IHC and FISH, making it the preferred HER2-negativity definition."
+        }
+      ]
+    },
+    {
+      "id": "F-037",
+      "kind": "claim_check",
+      "summary": "Contradicted: In this data set, there was a high degree of overlap between these two distinctions with 76 TNBCs, 81 basal-like, and 6... Correct value: TNBC count: 123 (ER-/PR-/HER2-Final-Status-Negative) or 116 (ER-/PR-/lab-IHC-Negative), not 76; Basal-like count: 141 (PAM50 Basal among primary tumors with a call), not 81; Both TNBC+Basal-like: 101 (HER2_Final_Status definition) or 77 (lab IHC definition), not 65. Full PAM50 distribution (n=844 with calls): LumA 421 (49.9%), LumB 192 (22.7%), Basal 141 (16.7%), Her2 67 (7.9%), Normal 23 (2.7%).",
+      "severity": "high",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-037",
+          "note": "In this data set, there was a high degree of overlap between these two distinctions with 76 TNBCs, 81 basal-like, and 65 that were both TNBCs and basal-like."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on clinical (primary_only=true, where={'breast_carcinoma_estrogen_recept",
+          "note": "123"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=HER2_Final_Status_nature2012, primary_only=tr",
+          "note": "Negative=652, Positive=114, Equivocal=10"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=her2_immunohistochemistry_level_result, prima",
+          "note": "1+=270, 2+=199, 3+=90, 0=63"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on clinical (where={'breast_carcinoma_estrogen_receptor_status': 'Negat",
+          "note": "243"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=breast_carcinoma_estrogen_receptor_status, pr",
+          "note": "Positive=808, Negative=238, Indeterminate=2"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=breast_carcinoma_progesterone_receptor_status",
+          "note": "Positive=699, Negative=344, Indeterminate=4"
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        }
+      ],
+      "claim_text": "In this data set, there was a high degree of overlap between these two distinctions with 76 TNBCs, 81 basal-like, and 65 that were both TNBCs and basal-like.",
+      "claim_verdict": "contradicted",
+      "needs_human_review": false,
+      "correct_value": "TNBC count: 123 (ER-/PR-/HER2-Final-Status-Negative) or 116 (ER-/PR-/lab-IHC-Negative), not 76; Basal-like count: 141 (PAM50 Basal among primary tumors with a call), not 81; Both TNBC+Basal-like: 101 (HER2_Final_Status definition) or 77 (lab IHC definition), not 65. Full PAM50 distribution (n=844 with calls): LumA 421 (49.9%), LumB 192 (22.7%), Basal 141 (16.7%), Her2 67 (7.9%), Normal 23 (2.7%).",
+      "limitation": "The claim does not specify which HER2-negativity definition was used, which column was used for Basal-like classification, or whether a filtered subset (e.g., only the 535 samples with all five data layers) was the intended denominator. Counts were checked against primary tumors only (n=1,101). The report may have used an earlier or differently filtered cohort.",
+      "why_it_matters": "All three headline numbers (76 TNBC, 81 Basal-like, 65 overlap) are substantially wrong \u2014 the true counts are roughly 1.6\u20131.8\u00d7 larger \u2014 which would invalidate any Venn-diagram overlap analysis, enrichment calculation, or concordance statistic built on these figures.",
+      "next_step": "Replace the three figures in the overlap/Venn diagram section with the correct values: 141 Basal-like (PAM50), 123 TNBC (using HER2_Final_Status_nature2012), and 101 in the intersection; re-derive any concordance or sensitivity/specificity statistics that relied on the original counts.",
+      "cannot_tell": "Whether the report author analysed a pre-filtered subset (e.g., only the 535 samples with all 5 data layers, or a subset with complete ER/PR/HER2/PAM50 data) that could explain the smaller counts \u2014 a targeted filter on that sub-cohort might narrow the gap, but even under those constraints 76/81/65 appear inconsistent with the data.",
+      "alternatives": [
+        {
+          "column": "lab_proc_her2_neu_immunohistochemistry_receptor_status",
+          "value": "TNBC=116, Overlap=77",
+          "note": "Using ER-/PR-/HER2-IHC-Negative as TNBC definition gives 116 TNBCs and 77 overlapping with Basal-like \u2014 still far from the claimed 76/65"
+        },
+        {
+          "column": "HER2_Final_Status_nature2012",
+          "value": "TNBC=123, Overlap=101",
+          "note": "Using the curated Nature 2012 HER2 Final Status gives 123 TNBCs and 101 overlapping with Basal-like \u2014 closest to but still far from the claimed 76/65"
+        }
+      ]
+    },
+    {
+      "id": "F-038",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Basal-like tumours showed a high frequency of TP53 mutations (80%)9, which when combined with inferred TP53 pathway act...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-038",
+          "note": "Basal-like tumours showed a high frequency of TP53 mutations (80%)9, which when combined with inferred TP53 pathway activity suggests that loss of TP53 function occurs within most, if not all, basal-like cancers (Fig. 3b)."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on clinical (where={'PAM50Call_RNAseq': 'Basal'})",
+          "note": "142"
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "filter on mutation (where={'TCGA-A1-A0SK-01': {'op': '>=', 'value': 0}})",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on mutation (where={'TCGA-A1-A0SK-01': {'op': '>=', 'value': 0}})",
+          "note": "40543"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:aggregate on mutation (column=TCGA-A1-A0SK-01)",
+          "note": "58.0"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        }
+      ],
+      "claim_text": "Basal-like tumours showed a high frequency of TP53 mutations (80%)9, which when combined with inferred TP53 pathway activity suggests that loss of TP53 function occurs within most, if not all, basal-like cancers (Fig. 3b).",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-039",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: PIK3CA was the next most commonly mutated gene (,9%); however, inferred PI(3)K pathway activity, whether from gene37\u201339...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-039",
+          "note": "PIK3CA was the next most commonly mutated gene (,9%); however, inferred PI(3)K pathway activity, whether from gene37\u201339, protein36, or high PI(3)K/AKT pathway activities, was highest in basal-like cancers (Fig. 3a)."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        }
+      ],
+      "claim_text": "PIK3CA was the next most commonly mutated gene (,9%); however, inferred PI(3)K pathway activity, whether from gene37\u201339, protein36, or high PI(3)K/AKT pathway activities, was highest in basal-like cancers (Fig. 3a).",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-040",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: A recent paper12 performed exome sequencing of 102 TNBCs.",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-040",
+          "note": "A recent paper12 performed exome sequencing of 102 TNBCs."
+        },
+        {
+          "kind": "analysis",
+          "id": "data_scope_check",
+          "note": "The TCGA-BRCA release contains no metadata about external publications, independent cohorts, or exome sequencing studies conducted outside TCGA. The clinical table has ER status (breast_carcinoma_estrogen_receptor_status), PR status (breast_carcinoma_progesterone_receptor_status), and HER2 status (lab_proc_her2_neu_immunohistochemistry_receptor_status / HER2_Final_Status_nature2012) columns that define TNBC within TCGA \u2014 but these cannot speak to what a separate paper sequenced. Verifying the 102-TNBC count would require access to the original paper's supplementary materials or its data repository (e.g., dbGaP, SRA, or EGA accession for reference 12)."
+        }
+      ],
+      "claim_text": "A recent paper12 performed exome sequencing of 102 TNBCs.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "The TCGA-BRCA release contains no metadata about external publications, independent cohorts, or exome sequencing studies conducted outside TCGA. The clinical table has ER status (breast_carcinoma_estrogen_receptor_status), PR status (breast_carcinoma_progesterone_receptor_status), and HER2 status (lab_proc_her2_neu_immunohistochemistry_receptor_status / HER2_Final_Status_nature2012) columns that define TNBC within TCGA \u2014 but these cannot speak to what a separate paper sequenced. Verifying the 102-TNBC count would require access to the original paper's supplementary materials or its data repository (e.g., dbGaP, SRA, or EGA accession for reference 12).",
+      "why_it_matters": "This claim cites an external study (reference 12) as a data source; if the cohort size of 102 is wrong, any downstream statistical comparisons drawing on that study's power (e.g., mutation frequency benchmarking) would be miscalibrated.",
+      "next_step": "Locate reference 12 in the paper's bibliography, retrieve the original publication or its supplementary data, and confirm the TNBC cohort size (N=102) and sequencing method (exome) directly from the source manuscript or its data-availability statement.",
+      "cannot_tell": "Whether the referenced paper's cohort (N=102 TNBCs) is accurate, as TCGA-BRCA is a separate dataset with its own TNBC cohort and no link to external study accession numbers or cohort sizes."
+    },
+    {
+      "id": "F-041",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Five of the top six most frequent TNBC mutations in ref. 12 were also observed at a similar frequency in our TNBC subse...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-041",
+          "note": "Five of the top six most frequent TNBC mutations in ref. 12 were also observed at a similar frequency in our TNBC subset (Myo3A not present here); of those five, three passed our test as a significantly mutated gene in TNBCs (Supplementary Table 2)."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "filter on clinical (where={'breast_carcinoma_estrogen_receptor_status': 'Negative', 'breast_carcinoma_progesterone_receptor_status': 'Negative', 'HER2_Final_Status_nature2012': 'Negative'})",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on clinical (where={'breast_carcinoma_estrogen_receptor_status': 'Negat",
+          "note": "123"
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "describe on mutation (column=TCGA-A1-A0SK-01)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:describe on mutation (column=TCGA-A1-A0SK-01)",
+          "note": "dtype=int64, non_null=40543, null=0, n_unique=2, numeric=True"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:aggregate on mutation (column=TCGA-A1-A0SK-01)",
+          "note": "58.0"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "dtype=int64, non_null=40543, null=0, n_unique=2, numeric=True"
+        }
+      ],
+      "claim_text": "Five of the top six most frequent TNBC mutations in ref. 12 were also observed at a similar frequency in our TNBC subset (Myo3A not present here); of those five, three passed our test as a significantly mutated gene in TNBCs (Supplementary Table 2).",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-042",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: Here we note that ,20% of basal-like tumours had a germline (n512) and/or somatic (n58) BRCA1 or BRCA2 variant, which s...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-042",
+          "note": "Here we note that ,20% of basal-like tumours had a germline (n512) and/or somatic (n58) BRCA1 or BRCA2 variant, which suggests that one in five basal-like patients might benefit from PARP inhibitors and/or platinum com- pounds53,54."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on clinical (where={'PAM50Call_RNAseq': 'Basal'})",
+          "note": "142"
+        },
+        {
+          "kind": "file",
+          "id": "mutation_gene_level.tsv.gz",
+          "note": "describe on mutation (column=TCGA-A1-A0SK-01)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:describe on mutation (column=TCGA-A1-A0SK-01)",
+          "note": "dtype=int64, non_null=40543, null=0, n_unique=2, numeric=True"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        }
+      ],
+      "claim_text": "Here we note that ,20% of basal-like tumours had a germline (n512) and/or somatic (n58) BRCA1 or BRCA2 variant, which suggests that one in five basal-like patients might benefit from PARP inhibitors and/or platinum com- pounds53,54.",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-043",
+      "kind": "claim_check",
+      "summary": "Insufficient evidence: manyofthecomponentsofthePI(3)KandRAS\u2013RAF\u2013MEKpathway were amplified (but not typically mutated) in basal-like cancers in...",
+      "severity": "medium",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-043",
+          "note": "manyofthecomponentsofthePI(3)KandRAS\u2013RAF\u2013MEKpathway were amplified (but not typically mutated) in basal-like cancers including PIK3CA (49%), KRAS (32%), BRAF (30%) and EGFR (23%)."
+        },
+        {
+          "kind": "file",
+          "id": "clinical.tsv",
+          "note": "value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on clinical (column=PAM50Call_RNAseq, primary_only=true)",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on clinical (where={'PAM50Call_RNAseq': 'Basal'})",
+          "note": "142"
+        },
+        {
+          "kind": "file",
+          "id": "copy_number_gistic.tsv.gz",
+          "note": "describe on copy_number (column=TCGA-A1-A0SK-01)",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:describe on copy_number (column=TCGA-A1-A0SK-01)",
+          "note": "dtype=int64, non_null=24776, null=0, n_unique=5, numeric=True"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:value_counts on copy_number (column=TCGA-A1-A0SK-01)",
+          "note": "-1=10442, 1=8251, 0=5320, -2=407, 2=356"
+        },
+        {
+          "kind": "analysis",
+          "id": "budget_exhausted",
+          "note": "Verifier gave up after 10 tool calls without emitting finalize_verdict. Evidence above lists the files and queries it did run."
+        },
+        {
+          "kind": "analysis",
+          "id": "cohort_trace",
+          "note": "LumA=421, LumB=192, Basal=141, Her2=67, Normal=23"
+        }
+      ],
+      "claim_text": "manyofthecomponentsofthePI(3)KandRAS\u2013RAF\u2013MEKpathway were amplified (but not typically mutated) in basal-like cancers including PIK3CA (49%), KRAS (32%), BRAF (30%) and EGFR (23%).",
+      "claim_verdict": "insufficient_evidence",
+      "needs_human_review": true,
+      "limitation": "Verifier exhausted its reasoning budget without reaching a verdict.",
+      "why_it_matters": "The TCGA-BRCA release does not record what this sentence requires. Any downstream use of the claim rests on evidence the data does not contain.",
+      "next_step": "Remove or reword the sentence, or rerun the analysis against a dataset that records what the claim requires (for treatment-response claims, consider METABRIC or a neo-adjuvant endocrine therapy trial)."
+    },
+    {
+      "id": "F-044",
+      "kind": "claim_check",
+      "summary": "Contradicted: 466samples(463 patients) wereincommonacross5outof6 platforms (excluding RPPA) and 348 patients were in common on 6 out ... Correct value: 5-of-6 platforms (excl. RPPA): 783 samples / 783 unique patients (not 466 samples / 463 patients); 6-of-6 platforms (all incl. RPPA): 535 samples / 535 unique patients (not 348 patients)",
+      "severity": "high",
+      "confidence": "high",
+      "evidence": [
+        {
+          "kind": "claim",
+          "id": "F-044",
+          "note": "466samples(463 patients) wereincommonacross5outof6 platforms (excluding RPPA) and 348 patients were in common on 6 out of 6 platforms."
+        },
+        {
+          "kind": "file",
+          "id": "sample_manifest.csv",
+          "note": "count on sample_manifest (where={'sample_type': 'Primary Tumor'})",
+          "release": "raw"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:count on sample_manifest (where={'sample_type': 'Primary Tumor'})",
+          "note": "1101"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on sample_manifest (where={'sample_type': 'Primary Tumor'})",
+          "note": "1101"
+        },
+        {
+          "kind": "analysis",
+          "id": "A:filter on sample_manifest (where={'sample_type': 'Primary Tumor', 'has_surviva",
+          "note": "783"
+        }
+      ],
+      "claim_text": "466samples(463 patients) wereincommonacross5outof6 platforms (excluding RPPA) and 348 patients were in common on 6 out of 6 platforms.",
+      "claim_verdict": "contradicted",
+      "needs_human_review": false,
+      "correct_value": "5-of-6 platforms (excl. RPPA): 783 samples / 783 unique patients (not 466 samples / 463 patients); 6-of-6 platforms (all incl. RPPA): 535 samples / 535 unique patients (not 348 patients)",
+      "limitation": "The claim's exact definition of 'platforms' is ambiguous \u2014 if the author counted different platform combinations (e.g. excluding clinical or survival as separate layers), the specific intersection would change. All reasonable interpretations of 5-of-6 and 6-of-6 from the available flags were checked and none match the claimed numbers.",
+      "why_it_matters": "Both intersection sizes are drastically underreported: reporting 466 instead of 783 (5-of-6) and 348 instead of 535 (6-of-6) would cause any downstream power calculations, cohort-size justifications, or data-availability tables that cite these numbers to be severely incorrect.",
+      "next_step": "Replace '466 samples (463 patients)' with '783 samples/patients' for the 5-platform intersection (survival, mutation, copy_number, RNA, clinical) and replace '348 patients' with '535 patients' for the 6-platform intersection in whichever Table or Methods section cites these figures; re-derive any power or completeness analyses that use these denominators.",
+      "cannot_tell": "Whether the original analysis used a different or earlier version of the TCGA-BRCA manifest that contained a smaller set of samples, which could explain the lower counts."
+    }
+  ]
+}
