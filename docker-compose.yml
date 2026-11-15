@@ -11,6 +11,4 @@ services:
     volumes:
       - .:/app
       - ./outputs:/app/outputs
-      # Mapping the challenge repo allows you to use the data you've already downloaded locally
-      - ./oncosys-hackathon-challenge:/app/oncosys-hackathon-challenge
     restart: unless-stopped
