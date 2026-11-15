@@ -47,3 +47,10 @@ The system SHALL render the schema as a compact plain-text summary for inclusion
 #### Scenario: Summary content
 - **WHEN** get_schema_summary_for_prompt is called
 - **THEN** the output contains the dataset description, a CANNOT ANSWER section listing all seven topics with their reasons, and per-column LIMITATION lines for the therapy flags
+
+### Requirement: Per-dataset swap
+The semantic layer SHALL be a single self-contained file that can be swapped per dataset or report without touching agent, tool, or tolerance code; a Nature 2012 TCGA-BRCA variant (demo/nature2012/semantic_nature2012.py) SHALL ship as a drop-in replacement for core/semantic.py to audit the original paper's claims against current GDC data.
+
+#### Scenario: Nature 2012 demo swap
+- **WHEN** a reviewer copies demo/nature2012/semantic_nature2012.py over core/semantic.py and restarts the server
+- **THEN** audits run against the Nature 2012 paper's claims with identical agent, tool, and tolerance behavior

@@ -17,7 +17,7 @@ The system SHALL resolve a release from a raw data directory or an envelope path
 - **THEN** construction raises FileNotFoundError naming the missing path
 
 ### Requirement: Layer and manifest loading with caching
-The system SHALL expose six data layers (clinical, survival, mutation, copy_number, protein, rna) mapped to their exact file names and two manifests (sample_manifest, slide_manifest). Molecular matrices SHALL be read tab-separated with the first column as row index; long tables and manifests without an index. Each layer SHALL load at most once per instance and be cached thereafter. Unknown names SHALL raise KeyError listing the known layers and manifests; a missing file SHALL raise FileNotFoundError naming the expected path.
+The system SHALL expose six data layers (clinical, survival, mutation, copy_number, protein, rna) with exact file names and two manifests (sample_manifest, slide_manifest). Molecular matrices SHALL be read tab-separated with the first column as index; long tables and manifests plain. Each layer SHALL be loaded at most once per instance and cached. Unknown names SHALL raise KeyError listing the known layers and manifests; a missing file SHALL raise FileNotFoundError naming the expected path.
 
 #### Scenario: Cached reload
 - **WHEN** load_layer("clinical") is called twice on the same instance

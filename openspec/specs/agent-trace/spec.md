@@ -41,7 +41,7 @@ The system SHALL render the trace as Markdown: a top-level "Agent trace" heading
 - **THEN** the Markdown shows the first 239 characters plus an ellipsis
 
 ### Requirement: Shared LLM client
-Every agent SHALL share a single Anthropic client obtained from a lazy singleton, which SHALL raise RuntimeError when no API key is configured or only a placeholder is present. No temperature parameter SHALL be sent with requests; determinism comes from the tool computations, not sampling settings.
+Every agent SHALL share a single Anthropic client obtained from a lazy singleton, which SHALL raise RuntimeError when no API key is configured or only a placeholder is present. The client SHALL pass through an optional ANTHROPIC_BASE_URL override so non-default providers can be targeted. No temperature parameter SHALL be sent with requests; determinism comes from the tool computations, not sampling settings.
 
 #### Scenario: Missing API key
 - **WHEN** an agent is constructed without ANTHROPIC_API_KEY set

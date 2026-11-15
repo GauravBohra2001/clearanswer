@@ -20,11 +20,15 @@ The system SHALL verify each claim through an Anthropic tool-use loop bounded by
 - **THEN** the verifier may call manifest_lookup and/or data_query, receives exact counts from the tools, and records each call in the trace
 
 ### Requirement: Finalize contract
-The system SHALL require the model to record its verdict through a dedicated `finalize_verdict` tool called exactly once, carrying a verdict (supported | contradicted | insufficient_evidence), confidence, severity, and reasoning, plus a correct_value for contradicted verdicts. The verdict shape is stable regardless of any other model output.
+The system SHALL require the model to record its verdict through a dedicated `finalize_verdict` tool called exactly once, carrying verdict (supported | contradicted | insufficient_evidence), confidence, severity, and reasoning, plus correct_value for contradicted verdicts. Optional fields let the model attach claim-specific context: limitation, evidence_files, why_it_matters, next_step, cannot_tell, and alternatives (column/value/note entries for other columns answering the same question).
 
 #### Scenario: Verdict recorded
 - **WHEN** the model calls finalize_verdict with verdict "contradicted" and correct_value "49.9% (421 of 844)"
 - **THEN** the verifier builds the ClaimResult from that input and stops the loop
+
+#### Scenario: Alternatives captured
+- **WHEN** finalize_verdict notes that ER status by IHC gives a different number than PAM50 Luminal
+- **THEN** the ClaimResult carries an alternatives entry with column, value, and note
 
 ### Requirement: Compound sentences use worst-part-wins
 The system SHALL check EVERY number in a compound sentence and assign ONE verdict to the whole sentence: supported only when every sub-claim matches the data within reasonable rounding; contradicted when at least one sub-claim disagrees, with correct_value listing what the data shows for each wrong sub-claim separated by "; ".
@@ -53,6 +57,17 @@ When a contradicted verdict arrives without a correct_value, the system SHALL re
 #### Scenario: Model omits correct_value
 - **WHEN** finalize_verdict says contradicted with an empty correct_value and a prior data_query returned a PAM50 distribution
 - **THEN** the finding's correct_value is a short summary of that query result
+
+### Requirement: Rounding-tolerance safety net
+The system SHALL apply a tolerance safety net when the verdict is contradicted: compare the first number of the claim with the first number of correct_value — percentages within ±0.5pp, approximate-wording claims within max(1.5pp, 5% relative), all other values exact match. A value within tolerance SHALL upgrade the verdict to supported at severity none, append a tolerance note to reasoning, and set it as limitation when absent.
+
+#### Scenario: Rounded percentage upgraded
+- **WHEN** finalize_verdict says contradicted with correct_value "49.9% (421 of 844)" but the claim said "50%"
+- **THEN** the verdict becomes supported at severity none and the reasoning carries a tolerance note
+
+#### Scenario: Count mismatch stays contradicted
+- **WHEN** the claim states 620 primary tumors but correct_value shows 535
+- **THEN** the difference exceeds tolerance and the verdict remains contradicted
 
 ### Requirement: Insufficient evidence limitation quality
 For insufficient_evidence verdicts, the system SHALL record in the limitation field the specific columns searched and the dataset or measure that would be needed to answer the claim.
