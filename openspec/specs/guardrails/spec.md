@@ -5,12 +5,22 @@ Enforce the hackathon's out-of-scope rule — no diagnosis, no treatment recomme
 
 ## Requirements
 
-### Requirement: Categorized pattern library
-The system SHALL maintain nine explicit guard categories, each with one or more regex patterns: clinical_recommendation (recommend/prescribe/administer phrasing, first-line/second-line treatment, "standard of care"), diagnosis ("diagnosed with", "diagnosis of", "this patient has"), risk_score_or_prognosis (will die/survive/relapse/recur/respond, individual risk score/estimate/prediction, prognosis quality statements), reidentification (re-identify/deanonymize/match-to-named-patient and patient name/address/contact lookups), pii_or_contact (US phone numbers, SSN patterns, email addresses), regulatory_or_production_claim (FDA-approved, CE-marked, clinically validated, production-ready, HIPAA-compliant), individual_barcode (a full TCGA-XX-XXXX[-NN] barcode, which names an individual participant even though the data is de-identified), prompt_injection ("ignore previous instructions", system:/assistant: role markers, </system> tags, jailbreak/prompt-injection terms), and invalid_input (negative percentages or percentages strictly above 100).
+### Requirement: Clinical and prognostic guards
+The system SHALL flag clinical recommendation language (recommend/prescribe/administer phrasing, first-line or second-line treatment options, "standard of care"), diagnosis language ("diagnosed with", "diagnosis of", "this patient has"), and risk or prognosis language (will die/survive/relapse/recur/respond, individual risk score/estimate/prediction, prognosis quality statements).
+
+#### Scenario: Standard of care flagged
+- **WHEN** pre_check is run on text containing "standard of care"
+- **THEN** it returns a clinical_recommendation issue quoting the matched snippet
+
+### Requirement: Privacy and re-identification guards
+The system SHALL flag re-identification attempts (re-identify/deanonymize, matching to named patients, patient name/address/contact lookups), personal data patterns (US phone numbers, SSN shapes, email addresses), and full TCGA sample barcodes — a complete TCGA-XX-XXXX[-NN] barcode names an individual participant even though the data is de-identified.
 
 #### Scenario: Barcode flagged
 - **WHEN** pre_check is run on text containing "TCGA-3C-AAAU-01"
 - **THEN** it returns an individual_barcode issue because a full barcode names one participant
+
+### Requirement: Regulatory, injection, and input guards
+The system SHALL flag regulatory or production claims (FDA-approved, CE-marked, clinically validated, production-ready, HIPAA-compliant), prompt-injection attempts ("ignore previous instructions", role markers such as "system:", </system> tags, jailbreak terms), and impossible numeric shares (negative percentages or percentages strictly above 100).
 
 #### Scenario: Impossible percentage flagged
 - **WHEN** pre_check is run on text containing "150% of tumors" or "-5% of tumors"

@@ -40,8 +40,15 @@ The system SHALL render the trace as Markdown: a top-level "Agent trace" heading
 - **WHEN** a step's output_data repr exceeds 240 characters
 - **THEN** the Markdown shows the first 239 characters plus an ellipsis
 
-### Requirement: Shared client with transient-error retry
-Every agent SHALL use a shared Anthropic client obtained from a lazy singleton that raises RuntimeError when no API key is configured, and call_llm SHALL retry on transient failures — HTTP status in {408, 409, 429, 500, 502, 503, 504, 529} or error types whose names contain timeout/connection/apiconnection/ratelimit/overload — up to MAX_RETRIES (2) additional attempts with exponential backoff of 2^attempt seconds. Non-transient errors SHALL propagate immediately. No temperature parameter SHALL be sent; determinism comes from the tool computations, not sampling settings.
+### Requirement: Shared LLM client
+Every agent SHALL share a single Anthropic client obtained from a lazy singleton, which SHALL raise RuntimeError when no API key is configured or only a placeholder is present. No temperature parameter SHALL be sent with requests; determinism comes from the tool computations, not sampling settings.
+
+#### Scenario: Missing API key
+- **WHEN** an agent is constructed without ANTHROPIC_API_KEY set
+- **THEN** client acquisition raises RuntimeError instead of silently proceeding
+
+### Requirement: Transient-error retry
+call_llm SHALL retry on transient failures — HTTP status in {408, 409, 429, 500, 502, 503, 504, 529} or error types whose names contain timeout, connection, apiconnection, ratelimit, or overload — for up to MAX_RETRIES (2) additional attempts with exponential backoff of 2^attempt seconds. Non-transient errors SHALL propagate immediately.
 
 #### Scenario: Rate limit retried
 - **WHEN** a call fails with status 429 on the first attempt
