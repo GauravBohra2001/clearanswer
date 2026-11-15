@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  clearanswer:
+    build: .
+    container_name: clearanswer_app
+    ports:
+      - "5050:5050"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - ./outputs:/app/outputs
+    restart: unless-stopped

@@ -10,11 +10,14 @@ self.log_step() as needed.
 """
 from __future__ import annotations
 
+import logging
 import time
 from typing import Any, Optional
 
 from config import MAX_RETRIES, MODEL, get_client
 from core.trace import TraceCollector, TraceEntry
+
+logger = logging.getLogger(__name__)
 
 _TRANSIENT_STATUSES = {408, 409, 429, 500, 502, 503, 504, 529}
 
@@ -60,7 +63,17 @@ class BaseAgent:
                 return self.client.messages.create(**kwargs)
             except Exception as e:  # noqa: BLE001
                 last_err = e
+                status = getattr(e, "status_code", None)
+                detail = f"attempt {attempt + 1}/{MAX_RETRIES + 1} failed: {type(e).__name__}"
+                if isinstance(status, int):
+                    detail += f" (HTTP {status})"
+                logger.warning("%s", detail)
                 if attempt >= MAX_RETRIES or not _is_transient(e):
+                    logger.error(
+                        "model provider call failed after %d attempt(s)",
+                        attempt + 1,
+                        exc_info=True,
+                    )
                     raise
                 time.sleep(2 ** attempt)
         assert last_err is not None

@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import copy
 import json
+import logging
 import os
 import subprocess
 import sys
@@ -35,9 +36,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from core.logging_setup import setup_logging
+
+setup_logging()
+
 from flask import Flask, jsonify, render_template, request, send_from_directory
 
 from agents.orchestrator import OrchestratorAgent
+
+logger = logging.getLogger(__name__)
 
 APP_DIR = Path(__file__).resolve().parent
 DEFAULT_DATA_DIR = (APP_DIR / "oncosys-hackathon-challenge" / "data" / "tcga-brca" / "raw").resolve()
@@ -217,8 +224,13 @@ def export_audit(job_id: str | None = None):
     OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
     out_path = OUTPUTS_DIR / f"audit-{job_id}.json"
     out_path.write_text(json.dumps(audit, indent=2), encoding="utf-8")
+    logger.info("export written: %s", str(out_path), extra={"job_id": job_id})
 
     valid, validator_output = _run_validator(out_path)
+    if valid:
+        logger.info("validator passed", extra={"job_id": job_id})
+    else:
+        logger.warning("validator failed", extra={"job_id": job_id})
     return jsonify({
         "path": str(out_path.relative_to(APP_DIR)),
         "download_url": f"/api/export/download/{job_id}",
@@ -287,6 +299,7 @@ def download_html_report(job_id: str):
 def _run_audit_job(job_id: str, report_path: Path, data_dir: str, team: str) -> None:
     """Runs the orchestrator pipeline and records the outcome on the job dict."""
     _set_state(job_id, "extracting")
+    logger.info("audit started", extra={"job_id": job_id})
 
     # Progress callbacks let the status endpoint show real counts during the
     # long verify loop. The orchestrator invokes these inside its own try;
@@ -320,8 +333,15 @@ def _run_audit_job(job_id: str, report_path: Path, data_dir: str, team: str) -> 
             _jobs[job_id]["result"] = audit
             _jobs[job_id]["claims"] = audit.get("findings", [])
             _jobs[job_id]["state"] = "done"
+        logger.info(
+            "audit done: %d finding(s)", len(audit.get("findings", [])),
+            extra={"job_id": job_id},
+        )
     except Exception as e:  # noqa: BLE001 - surfaced to the client
         tb = traceback.format_exc(limit=5)
+        logger.error(
+            "audit failed", exc_info=True, extra={"job_id": job_id}
+        )
         with _jobs_lock:
             _jobs[job_id]["state"] = "error"
             _jobs[job_id]["error"] = f"{type(e).__name__}: {e}\n{tb}"
@@ -507,5 +527,5 @@ def _project_claims(job: dict) -> list[dict]:
 if __name__ == "__main__":
     # debug=True is fine for the demo. Disable the reloader so the background
     # worker threads do not get killed by the double-start reloader process.
-    port = int(os.environ.get("PORT", "5000"))
+    port = int(os.environ.get("PORT", "5050"))
     app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
