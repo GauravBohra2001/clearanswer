@@ -3,7 +3,7 @@ FROM python:3.13-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PORT=5000
+ENV PORT=5050
 
 # Set work directory
 WORKDIR /app
@@ -31,7 +31,7 @@ RUN if [ -d "oncosys-hackathon-challenge" ]; then rm -rf oncosys-hackathon-chall
 RUN mkdir -p outputs
 
 # Expose the port the app runs on
-EXPOSE 5000
+EXPOSE 5050
 
 # Run the application
 CMD ["python", "app.py"]
