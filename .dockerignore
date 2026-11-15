@@ -1,0 +1,25 @@
+# Bytecode and cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environments
+venv/
+.env
+.venv
+env/
+
+# Git
+.git
+.gitignore
+
+# Project specific
+outputs/
+oncosys-hackathon-challenge/
+*.log
+
+# IDE
+.vscode/
+.idea/
+.claude/
