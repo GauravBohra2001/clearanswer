@@ -9,13 +9,18 @@ report from the envelope. This is the only script the judge needs to run.
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 
 from agents.orchestrator import OrchestratorAgent
+from core.logging_setup import setup_logging
 from output import validate_output, write_audit_json
+
+logger = logging.getLogger(__name__)
 
 
 def main() -> int:
+    setup_logging()
     parser = argparse.ArgumentParser(description="Audit the factual claims in a research report against a TCGA-BRCA release.")
     parser.add_argument("data_dir", help="Path to a TCGA-BRCA release directory (for example oncosys-hackathon-challenge/data/tcga-brca/raw/ or envelopes/opened/E07/release/).")
     parser.add_argument("report", help="Path to the research report Markdown file.")
@@ -23,16 +28,19 @@ def main() -> int:
     parser.add_argument("--verbose", action="store_true", help="Also print the full agent trace in Markdown.")
     parser.add_argument("--team", default="clearanswer", help="Team name recorded in audit.json producer.")
     args = parser.parse_args()
+    logger.info("audit started", extra={"run_path": args.report})
 
     orchestrator = OrchestratorAgent(team=args.team)
     try:
         audit = orchestrator.run(report_path=args.report, data_dir=args.data_dir)
     except Exception as e:  # noqa: BLE001 - surfaced to the judge's terminal
+        logger.error("audit failed", exc_info=True, extra={"run_path": args.report})
         print(f"ERROR: {type(e).__name__}: {e}", file=sys.stderr)
         return 1
 
     out_path = write_audit_json(audit, args.output)
     findings = audit.get("findings", [])
+    logger.info("audit done: %d finding(s)", len(findings), extra={"run_path": args.report})
     print(f"Extracted {len(findings)} claims from {args.report}.")
     for f in findings:
         label = f["claim_verdict"].upper()
