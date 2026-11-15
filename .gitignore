@@ -6,4 +6,5 @@ oncosys-hackathon-challenge/
 .DS_Store
 venv/
 .claude/
+logs/
 *.json

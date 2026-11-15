@@ -77,7 +77,7 @@ PORT=5050 python app.py                  # open http://localhost:5050
 ANTHROPIC_API_KEY=your-key-here
 ```
 
-Port 5000 is taken by macOS AirPlay Receiver on recent macOS versions,
+Port 5050 is taken by macOS AirPlay Receiver on recent macOS versions,
 which is why the default example uses `PORT=5050`.
 
 ## Practice envelope
